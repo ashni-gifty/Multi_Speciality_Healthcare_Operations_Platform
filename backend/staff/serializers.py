@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework import serializers
 
@@ -172,8 +173,13 @@ class StaffCreateSerializer(serializers.Serializer):
             **validated_data
         )
 
-        # Run model-level validation explicitly.
-        staff_profile.full_clean()
+        try:
+            staff_profile.full_clean()
+
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(
+                exc.message_dict
+            )
 
         staff_profile.save()
 
