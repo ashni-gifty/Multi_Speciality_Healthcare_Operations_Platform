@@ -39,7 +39,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -144,3 +146,11 @@ MAILERS = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
 ]
+
+AUTH_USER_MODEL = "accounts.CustomUser"
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+}
