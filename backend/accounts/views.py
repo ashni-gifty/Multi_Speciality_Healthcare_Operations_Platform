@@ -1,7 +1,10 @@
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+# from .permissions import IsAdminRole
 
 from .serializers import LoginSerializer
 
@@ -37,3 +40,17 @@ class LoginView(APIView):
             serializer.errors,
             status=400
         )
+
+# class AdminTestView(APIView):
+
+#     permission_classes = [
+#         IsAuthenticated,
+#         IsAdminRole,
+#     ]
+
+#     def get(self, request):
+#         return Response({
+#             "message": "Admin access granted",
+#             "username": request.user.username,
+#             "role": request.user.role,
+#         })
