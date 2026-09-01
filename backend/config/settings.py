@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-u9cu4c#p8e(gzku3^0!j*b-)^t)2(isnpzll$ngnkmlf7*wb_r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'accounts',
     'staff',
     'patients',
+    'pharmacy',
+    'prescriptions',
+    'laboratory',
 ]
 
 MIDDLEWARE = [
@@ -146,14 +149,21 @@ MAILERS = {
 }
 
 
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:3000",
 ]
 
 AUTH_USER_MODEL = "accounts.CustomUser"
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "accounts.authentication.BearerOrTokenAuthentication",
         "rest_framework.authentication.TokenAuthentication",
     ],
 }
