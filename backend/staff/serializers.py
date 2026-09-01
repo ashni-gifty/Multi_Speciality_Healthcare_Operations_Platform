@@ -19,6 +19,10 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class StaffProfileSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    email = serializers.CharField(source="user.email", read_only=True)
+    role = serializers.CharField(source="user.role", read_only=True)
+    department_name = serializers.CharField(source="department.name", read_only=True)
 
     class Meta:
         model = StaffProfile
@@ -26,6 +30,9 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             "id",
             "staff_id",
             "user",
+            "username",
+            "email",
+            "role",
             "first_name",
             "last_name",
             "date_of_birth",
@@ -34,6 +41,7 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             "address",
             "phone",
             "department",
+            "department_name",
             "degree",
             "work_experience",
             "joining_date",
@@ -48,7 +56,7 @@ class StaffCreateSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(
         write_only=True,
-        min_length=8
+        min_length=6
     )
 
     role = serializers.ChoiceField(
@@ -166,6 +174,8 @@ class StaffCreateSerializer(serializers.Serializer):
             email=email,
             password=password,
             role=role,
+            first_name=validated_data.get("first_name", ""),
+            last_name=validated_data.get("last_name", ""),
         )
 
         staff_profile = StaffProfile(
