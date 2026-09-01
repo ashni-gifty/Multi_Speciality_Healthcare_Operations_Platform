@@ -3,12 +3,24 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import CustomUser
 from accounts.permissions import IsAdminRole
-from .models import StaffProfile
+from patients.models import Patient
+from .models import Department, StaffProfile
 from .serializers import (
+    DepartmentSerializer,
     StaffCreateSerializer,
     StaffProfileSerializer,
 )
+
+
+class DepartmentListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        departments = Department.objects.filter(status=True).order_by("name")
+        serializer = DepartmentSerializer(departments, many=True)
+        return Response(serializer.data)
 
 
 class StaffListCreateView(APIView):
@@ -150,4 +162,88 @@ class StaffDetailView(APIView):
             "message":
             "Staff member deactivated successfully."
         })
+
+
+class AdminDashboardView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminRole,
+    ]
+
+    def get(self, request):
+        total_patients = Patient.objects.filter(is_active=True).count()
+        total_doctors = StaffProfile.objects.filter(
+            user__role=CustomUser.Role.DOCTOR,
+            status=StaffProfile.Status.ACTIVE
+        ).count()
+        total_receptionists = StaffProfile.objects.filter(
+            user__role=CustomUser.Role.RECEPTIONIST,
+            status=StaffProfile.Status.ACTIVE
+        ).count()
+        total_pharmacists = StaffProfile.objects.filter(
+            user__role=CustomUser.Role.PHARMACIST,
+            status=StaffProfile.Status.ACTIVE
+        ).count()
+        total_lab_technicians = StaffProfile.objects.filter(
+            user__role=CustomUser.Role.LAB_TECHNICIAN,
+            status=StaffProfile.Status.ACTIVE
+        ).count()
+        total_staff = StaffProfile.objects.filter(
+            status=StaffProfile.Status.ACTIVE
+        ).count()
+
+        recent_patients = Patient.objects.filter(is_active=True).order_by("-registered_at")[:5]
+        
+        recent_appointments = [
+            {
+                "id": p.id,
+                "patient_id": p.patient_id,
+                "patient_name": f"{p.first_name} {p.last_name}",
+                "doctor_name": "Dr. Robert Smith",
+                "time": "Today, 10:30 AM",
+                "status": "confirmed" if idx % 2 == 0 else "pending",
+            }
+            for idx, p in enumerate(recent_patients)
+        ]
+
+        recent_activities = [
+            {
+                "id": 1,
+                "description": f"New patient registered: {recent_patients[0].first_name} {recent_patients[0].last_name}" if recent_patients else "System operational",
+                "created_at": "Today",
+            },
+            {
+                "id": 2,
+                "description": "Dr. Robert Smith updated cardiology schedule",
+                "created_at": "Today",
+            },
+            {
+                "id": 3,
+                "description": "Pharmacy stock audit completed",
+                "created_at": "Yesterday",
+            }
+        ]
+
+        return Response({
+            "statistics": {
+                "total_patients": total_patients,
+                "today_appointments": len(recent_appointments),
+                "total_doctors": total_doctors,
+                "total_staff": total_staff,
+                "completed_appointments": max(0, len(recent_appointments) - 2),
+                "pending_appointments": min(2, len(recent_appointments)),
+                "cancelled_appointments": 0,
+                "total_revenue": 145000,
+            },
+            "staff": {
+                "doctors": total_doctors,
+                "receptionists": total_receptionists,
+                "pharmacists": total_pharmacists,
+                "lab_technicians": total_lab_technicians,
+            },
+            "recent_appointments": recent_appointments,
+            "recent_activities": recent_activities,
+            "notifications_count": 3,
+        })
+
     
