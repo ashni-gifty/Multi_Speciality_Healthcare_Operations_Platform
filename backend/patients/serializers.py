@@ -1,36 +1,25 @@
-<<<<<<< HEAD
-from django.core.exceptions import ValidationError as DjangoValidationError
+# from django.core.exceptions import ValidationError as DjangoValidationError
 
 from rest_framework import serializers
 
-=======
-from rest_framework import serializers
->>>>>>> origin/develop
 from .models import Patient
 
 
 class PatientSerializer(serializers.ModelSerializer):
-<<<<<<< HEAD
 
+    full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
     created_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
 
-=======
-    full_name = serializers.SerializerMethodField()
-    age = serializers.ReadOnlyField()
-
-    class Meta:
-        model = Patient
->>>>>>> origin/develop
         fields = [
             "id",
             "patient_id",
             "first_name",
             "last_name",
-<<<<<<< HEAD
+            "full_name",
             "date_of_birth",
             "age",
             "gender",
@@ -48,12 +37,16 @@ class PatientSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "patient_id",
+            "full_name",
             "age",
             "created_by",
             "created_by_name",
             "registered_at",
             "updated_at",
         ]
+
+    def get_full_name(self, obj):
+        return f"{obj.first_name} {obj.last_name}"
 
     def get_age(self, obj):
         return obj.age
@@ -77,6 +70,7 @@ class PatientSerializer(serializers.ModelSerializer):
 
         try:
             patient.full_clean()
+
         except DjangoValidationError as exc:
             raise serializers.ValidationError(
                 exc.message_dict
@@ -93,6 +87,7 @@ class PatientSerializer(serializers.ModelSerializer):
 
         try:
             instance.full_clean()
+
         except DjangoValidationError as exc:
             raise serializers.ValidationError(
                 exc.message_dict
@@ -101,20 +96,3 @@ class PatientSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-=======
-            "full_name",
-            "age",
-            "date_of_birth",
-            "gender",
-            "blood_group",
-            "phone",
-            "email",
-            "address",
-            "registered_at",
-            "is_active",
-        ]
-        read_only_fields = ["id", "patient_id", "registered_at", "age"]
-
-    def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}"
->>>>>>> origin/develop
