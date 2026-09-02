@@ -245,4 +245,4 @@ class StaffProfile(models.Model):
             raise ValidationError(errors)
 
     def __str__(self):
-        return f"{self.staff_id} - {self.first_name} {self.last_name}"
+        return f"{self.staff_id} -Dr. {self.first_name} {self.last_name}"

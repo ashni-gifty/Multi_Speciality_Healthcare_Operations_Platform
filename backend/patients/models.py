@@ -194,4 +194,5 @@ class Patient(models.Model):
 
         if errors:
             raise ValidationError(errors)
-        
+    def __str__(self):
+        return f"{self.patient_id} - {self.first_name} {self.last_name}"
