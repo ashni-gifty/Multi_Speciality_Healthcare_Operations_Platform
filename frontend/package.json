@@ -10,14 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
-<<<<<<< HEAD
     "axios": "^1.20.0",
     "bootstrap": "^5.3.8",
     "lucide-react": "^1.38.0",
-=======
-    "bootstrap": "^5.3.8",
-    "lucide-react": "^1.37.0",
->>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3"
