@@ -19,10 +19,13 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class StaffProfileSerializer(serializers.ModelSerializer):
+<<<<<<< HEAD
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.CharField(source="user.email", read_only=True)
     role = serializers.CharField(source="user.role", read_only=True)
     department_name = serializers.CharField(source="department.name", read_only=True)
+=======
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
 
     class Meta:
         model = StaffProfile
@@ -30,9 +33,12 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             "id",
             "staff_id",
             "user",
+<<<<<<< HEAD
             "username",
             "email",
             "role",
+=======
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
             "first_name",
             "last_name",
             "date_of_birth",
@@ -41,7 +47,10 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             "address",
             "phone",
             "department",
+<<<<<<< HEAD
             "department_name",
+=======
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
             "degree",
             "work_experience",
             "joining_date",
@@ -56,7 +65,11 @@ class StaffCreateSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(
         write_only=True,
+<<<<<<< HEAD
         min_length=6
+=======
+        min_length=8
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
     )
 
     role = serializers.ChoiceField(
@@ -174,8 +187,11 @@ class StaffCreateSerializer(serializers.Serializer):
             email=email,
             password=password,
             role=role,
+<<<<<<< HEAD
             first_name=validated_data.get("first_name", ""),
             last_name=validated_data.get("last_name", ""),
+=======
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
         )
 
         staff_profile = StaffProfile(

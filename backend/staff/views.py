@@ -3,17 +3,24 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+<<<<<<< HEAD
 from accounts.models import CustomUser
 from accounts.permissions import IsAdminRole
 from patients.models import Patient
 from .models import Department, StaffProfile
 from .serializers import (
     DepartmentSerializer,
+=======
+from accounts.permissions import IsAdminRole
+from .models import StaffProfile
+from .serializers import (
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
     StaffCreateSerializer,
     StaffProfileSerializer,
 )
 
 
+<<<<<<< HEAD
 class DepartmentListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -23,6 +30,8 @@ class DepartmentListView(APIView):
         return Response(serializer.data)
 
 
+=======
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
 class StaffListCreateView(APIView):
 
     permission_classes = [
@@ -162,6 +171,7 @@ class StaffDetailView(APIView):
             "message":
             "Staff member deactivated successfully."
         })
+<<<<<<< HEAD
 
 
 class AdminDashboardView(APIView):
@@ -246,4 +256,6 @@ class AdminDashboardView(APIView):
             "notifications_count": 3,
         })
 
+=======
+>>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
     
