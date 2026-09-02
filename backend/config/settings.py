@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'pharmacy',
     'prescriptions',
     'laboratory',
+    'appointments',
 ]
 
 MIDDLEWARE = [
@@ -96,7 +97,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'hospital_db',
         'USER': 'root',
-        'PASSWORD': 'admin@123',
+        'PASSWORD': 'admin123',
         'HOST': 'localhost',
         'PORT': '3306',
     }
