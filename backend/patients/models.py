@@ -45,9 +45,15 @@ class Patient(models.Model):
         AB_NEGATIVE = "AB-", "AB-"
 
     patient_id = models.CharField(
-        max_length=20,
+        max_length=6,
         unique=True,
+<<<<<<< HEAD
         editable=True
+=======
+        editable=False,
+        null=True,
+        blank=True
+>>>>>>> origin/main
     )
 
     first_name = models.CharField(
@@ -103,6 +109,26 @@ class Patient(models.Model):
     is_active = models.BooleanField(
         default=True
     )
+    
+    def save(self, *args, **kwargs):
+        if not self.patient_id:
+            last_patient = (
+                Patient.objects
+                .exclude(patient_id__isnull=True)
+                .exclude(patient_id="")
+                .order_by("-id")
+                .first()
+            )
+
+            if last_patient:
+                last_number = int(last_patient.patient_id[1:])
+                new_number = last_number + 1
+            else:
+                new_number = 1
+
+            self.patient_id = f"P{new_number:05d}"
+
+        super().save(*args, **kwargs)
 
     @property
     def age(self):
@@ -194,4 +220,5 @@ class Patient(models.Model):
 
         if errors:
             raise ValidationError(errors)
-        
+    def __str__(self):
+        return f"{self.patient_id} - {self.first_name} {self.last_name}"
