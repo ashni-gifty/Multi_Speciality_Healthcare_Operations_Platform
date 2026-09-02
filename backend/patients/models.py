@@ -47,7 +47,10 @@ class Patient(models.Model):
     patient_id = models.CharField(
         max_length=6,
         unique=True,
-        editable=True
+        editable=False,
+        null=True,
+        blank=True
+
     )
 
     first_name = models.CharField(
