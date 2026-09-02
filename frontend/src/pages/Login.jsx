@@ -11,7 +11,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const [usernameOrEmail, setUsernameOrEmail] = useState("");
+  const [username, setusername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -53,7 +53,7 @@ const Login = () => {
 
     setError("");
 
-    if (!usernameOrEmail.trim()) {
+    if (!username.trim()) {
       setError("Please enter your username or email.");
       return;
     }
@@ -67,7 +67,7 @@ const Login = () => {
 
     try {
       const response = await login(
-        usernameOrEmail.trim(),
+        username.trim(),
         password
       );
 
@@ -171,10 +171,10 @@ const Login = () => {
             <div className="mb-3">
 
               <label
-                htmlFor="usernameOrEmail"
+                htmlFor="username"
                 className="form-label fw-semibold"
               >
-                Username or Email
+                Username
               </label>
 
               <div className="input-group">
@@ -184,13 +184,13 @@ const Login = () => {
                 </span>
 
                 <input
-                  id="usernameOrEmail"
+                  id="username"
                   type="text"
                   className="form-control"
                   placeholder="Enter username or email"
-                  value={usernameOrEmail}
+                  value={username}
                   onChange={(e) =>
-                    setUsernameOrEmail(e.target.value)
+                    setusername(e.target.value)
                   }
                   autoComplete="username"
                   autoFocus
