@@ -21,9 +21,9 @@ class DepartmentAdmin(admin.ModelAdmin):
         "name",
     )
 
-
 @admin.register(StaffProfile)
 class StaffProfileAdmin(admin.ModelAdmin):
+
     list_display = (
         "staff_id",
         "first_name",
@@ -45,3 +45,14 @@ class StaffProfileAdmin(admin.ModelAdmin):
         "last_name",
         "phone",
     )
+
+    def save_model(self, request, obj, form, change):
+        if obj.status == StaffProfile.Status.ACTIVE:
+            obj.user.is_active = True
+        else:
+            obj.user.is_active = False
+
+        obj.user.save(update_fields=["is_active"])
+
+        super().save_model(request, obj, form, change)
+        
