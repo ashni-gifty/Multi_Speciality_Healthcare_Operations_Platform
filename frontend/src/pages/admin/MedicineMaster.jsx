@@ -126,6 +126,7 @@ const MedicineMaster = () => {
       dosage_form: formData.dosage_form.trim(),
       batch_number: formData.batch_number.trim().toUpperCase(),
       manufacturer: formData.manufacturer.trim(),
+      supplier: formData.supplier.trim(),
       quantity: parseInt(formData.quantity, 10) || 0,
       reorder_level: parseInt(formData.reorder_level, 10) || 20,
       unit_price: parseFloat(formData.unit_price) || 0,

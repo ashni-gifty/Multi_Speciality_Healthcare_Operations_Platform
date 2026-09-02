@@ -16,6 +16,7 @@ class MedicineSerializer(serializers.ModelSerializer):
             "dosage_form",
             "batch_number",
             "manufacturer",
+            "supplier",
             "quantity",
             "reorder_level",
             "unit_price",

@@ -54,6 +54,11 @@ class Medicine(models.Model):
         blank=True
     )
 
+    supplier = models.CharField(
+        max_length=150,
+        blank=True
+    )
+
     quantity = models.PositiveIntegerField(
         default=0,
         help_text="Current stock quantity"
