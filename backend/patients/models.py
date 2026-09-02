@@ -45,9 +45,11 @@ class Patient(models.Model):
         AB_NEGATIVE = "AB-", "AB-"
 
     patient_id = models.CharField(
-        max_length=20,
+        max_length=6,
         unique=True,
-        editable=False
+        editable=False,
+        null=True,
+        blank=True
     )
 
     first_name = models.CharField(
@@ -103,6 +105,26 @@ class Patient(models.Model):
     is_active = models.BooleanField(
         default=True
     )
+    
+    def save(self, *args, **kwargs):
+        if not self.patient_id:
+            last_patient = (
+                Patient.objects
+                .exclude(patient_id__isnull=True)
+                .exclude(patient_id="")
+                .order_by("-id")
+                .first()
+            )
+
+            if last_patient:
+                last_number = int(last_patient.patient_id[1:])
+                new_number = last_number + 1
+            else:
+                new_number = 1
+
+            self.patient_id = f"P{new_number:05d}"
+
+        super().save(*args, **kwargs)
 
     @property
     def age(self):
