@@ -23,7 +23,7 @@ class MedicineListCreateView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        medicines = Medicine.objects.all()
+        medicines = Medicine.objects.filter(status=Medicine.Status.ACTIVE)
 
         search = request.query_params.get("search", "").strip()
         if search:
@@ -31,7 +31,9 @@ class MedicineListCreateView(APIView):
                 Q(name__icontains=search) |
                 Q(generic_name__icontains=search) |
                 Q(batch_number__icontains=search) |
-                Q(medicine_id__icontains=search)
+                Q(medicine_id__icontains=search) |
+                Q(manufacturer__icontains=search) |
+                Q(supplier__icontains=search)
             )
 
         category = request.query_params.get("category", "").strip()
@@ -137,8 +139,9 @@ class MedicineDetailView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        medicine.delete()
+        medicine.status = Medicine.Status.DISCONTINUED
+        medicine.save(update_fields=["status", "updated_at"])
         return Response(
-            {"message": "Medicine deleted successfully from inventory."},
+            {"message": "Medicine deactivated successfully. Historical records are preserved."},
             status=status.HTTP_200_OK
         )

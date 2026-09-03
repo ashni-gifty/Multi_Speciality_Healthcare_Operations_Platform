@@ -49,6 +49,7 @@ class Patient(models.Model):
         editable=False,
         null=True,
         blank=True
+
     )
 
     first_name = models.CharField(

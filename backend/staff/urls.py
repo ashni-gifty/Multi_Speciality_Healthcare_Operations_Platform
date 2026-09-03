@@ -2,7 +2,8 @@ from django.urls import path
 
 from .views import (
     AdminDashboardView,
-    DepartmentListView,
+    DepartmentDetailView,
+    DepartmentListCreateView,
     StaffDetailView,
     StaffListCreateView,
 )
@@ -27,8 +28,13 @@ urlpatterns = [
 
     path(
         "departments/",
-        DepartmentListView.as_view(),
+        DepartmentListCreateView.as_view(),
         name="department-list"
+    ),
+    path(
+        "departments/<str:department_id>/",
+        DepartmentDetailView.as_view(),
+        name="department-detail"
     ),
     path(
         "staff/<str:staff_id>/",

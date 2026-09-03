@@ -14,13 +14,72 @@ from .serializers import (
 )
 
 
-class DepartmentListView(APIView):
-    permission_classes = [IsAuthenticated]
+class DepartmentListCreateView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminRole,
+    ]
 
     def get(self, request):
-        departments = Department.objects.filter(status=True).order_by("name")
+        departments = Department.objects.all()
+        if request.query_params.get("include_inactive") != "true":
+            departments = departments.filter(status=True)
+        departments = departments.order_by("name")
         serializer = DepartmentSerializer(departments, many=True)
         return Response(serializer.data)
+
+    def post(self, request):
+        serializer = DepartmentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        department = serializer.save()
+        return Response(
+            DepartmentSerializer(department).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class DepartmentDetailView(APIView):
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminRole,
+    ]
+
+    def get_object(self, department_id):
+        try:
+            return Department.objects.get(department_id=department_id)
+        except Department.DoesNotExist:
+            return None
+
+    def get(self, request, department_id):
+        department = self.get_object(department_id)
+        if department is None:
+            return Response({"detail": "Department not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(DepartmentSerializer(department).data)
+
+    def put(self, request, department_id):
+        department = self.get_object(department_id)
+        if department is None:
+            return Response({"detail": "Department not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = DepartmentSerializer(department, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, department_id):
+        department = self.get_object(department_id)
+        if department is None:
+            return Response({"detail": "Department not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if department.staff_members.filter(status=StaffProfile.Status.ACTIVE).exists():
+            return Response(
+                {"detail": "This department has active staff. Reassign or deactivate them first."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        department.status = False
+        department.save(update_fields=["status", "updated_at"])
+        return Response({"message": "Department deactivated successfully."})
 
 
 class StaffListCreateView(APIView):

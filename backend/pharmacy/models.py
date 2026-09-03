@@ -85,6 +85,40 @@ class MedicineStock(models.Model):
         max_length=50
     )
 
+    manufacturer = models.CharField(
+        max_length=150,
+        blank=True
+    )
+
+    supplier = models.CharField(
+        max_length=150,
+        blank=True
+    )
+
+    quantity = models.PositiveIntegerField(
+        default=0,
+        help_text="Current stock quantity"
+    )
+
+    reorder_level = models.PositiveIntegerField(
+        default=20,
+        help_text="Stock level below which alert is triggered"
+    )
+
+    unit_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Selling price per unit in INR"
+    )
+
+    cost_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Purchase cost per unit in INR"
+    )
+    
     manufacturing_date = models.DateField()
 
     expiry_date = models.DateField()
