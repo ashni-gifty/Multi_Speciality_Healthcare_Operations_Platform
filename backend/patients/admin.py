@@ -16,6 +16,7 @@ class PatientAdmin(admin.ModelAdmin):
         "phone",
         "created_by",
         "registered_at",
+        "next_visit_date",
         "is_active",
     )
 

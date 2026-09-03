@@ -31,6 +31,7 @@ class PatientSerializer(serializers.ModelSerializer):
             "created_by_name",
             "registered_at",
             "updated_at",
+            "next_visit_date",
             "is_active",
         ]
 

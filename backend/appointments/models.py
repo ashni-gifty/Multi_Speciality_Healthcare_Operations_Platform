@@ -8,9 +8,16 @@ from staff.models import StaffProfile
 class Appointment(models.Model):
 
     class Status(models.TextChoices):
-        SCHEDULED = "SCHEDULED", "Scheduled"
+        BOOKED = "BOOKED", "Booked"
+        CHECKED_IN = "CHECKED_IN", "Checked In"
+        IN_CONSULTATION = "IN_CONSULTATION", "In Consultation"
         COMPLETED = "COMPLETED", "Completed"
         CANCELLED = "CANCELLED", "Cancelled"
+        NO_SHOW = "NO_SHOW", "No Show"
+
+    class TokenStatus(models.TextChoices):
+        NOT_ISSUED = "NOT_ISSUED", "Not Issued"
+        ISSUED = "ISSUED", "Issued"
 
     patient = models.ForeignKey(
         Patient,
@@ -30,14 +37,33 @@ class Appointment(models.Model):
     appointment_time = models.TimeField()
 
     status = models.CharField(
-        max_length=20,
+        max_length=25,
         choices=Status.choices,
-        default=Status.SCHEDULED,
+        default=Status.BOOKED,
+    )
+
+    token_status = models.CharField(
+        max_length=20,
+        choices=TokenStatus.choices,
+        default=TokenStatus.NOT_ISSUED,
+    )
+
+    token_number = models.PositiveIntegerField(
+        null=True,
+        blank=True,
     )
 
     reason = models.TextField(
         blank=True,
         null=True,
+    )
+
+    booked_by = models.ForeignKey(
+        StaffProfile,
+        on_delete=models.PROTECT,
+        related_name="booked_appointments",
+        null=True,
+        blank=True,
     )
 
     created_at = models.DateTimeField(
@@ -76,6 +102,13 @@ class Appointment(models.Model):
                 fields=[
                     "appointment_date",
                     "patient",
+                ]
+            ),
+            models.Index(
+                fields=[
+                    "appointment_date",
+                    "doctor",
+                    "status",
                 ]
             ),
         ]

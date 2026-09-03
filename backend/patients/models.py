@@ -1,4 +1,3 @@
-import re
 import calendar
 from datetime import date
 
@@ -42,7 +41,7 @@ class Patient(models.Model):
         O_POSITIVE = "O+", "O+"
         O_NEGATIVE = "O-", "O-"
         AB_POSITIVE = "AB+", "AB+"
-        AB_NEGATIVE = "AB-", "AB-"
+        AB_NEGATIVE = "AB-"
 
     patient_id = models.CharField(
         max_length=6,
@@ -98,6 +97,11 @@ class Patient(models.Model):
         auto_now_add=True
     )
 
+    next_visit_date = models.DateField(
+        null=True,
+        blank=True
+    )
+
     updated_at = models.DateTimeField(
         auto_now=True
     )
@@ -105,14 +109,14 @@ class Patient(models.Model):
     is_active = models.BooleanField(
         default=True
     )
-    
+
     def save(self, *args, **kwargs):
         if not self.patient_id:
             last_patient = (
                 Patient.objects
                 .exclude(patient_id__isnull=True)
                 .exclude(patient_id="")
-                .order_by("-id")
+                .order_by("-patient_id")
                 .first()
             )
 
@@ -128,10 +132,6 @@ class Patient(models.Model):
 
     @property
     def age(self):
-        """
-        Calculate current age from date of birth.
-        Age is not stored in the database.
-        """
         today = date.today()
 
         years = today.year - self.date_of_birth.year
@@ -148,27 +148,16 @@ class Patient(models.Model):
         errors = {}
         today = date.today()
 
-        # -----------------------------
-        # Date of Birth Validation
-        # -----------------------------
-
         if not self.date_of_birth:
-            errors["date_of_birth"] = (
-                "Date of birth is required."
-            )
+            errors["date_of_birth"] = "Date of birth is required."
 
         else:
-
-            # Future DOB
             if self.date_of_birth > today:
                 errors["date_of_birth"] = (
                     "Date of birth cannot be in the future."
                 )
 
             else:
-                # --------------------------------
-                # Minimum age: 3 months
-                # --------------------------------
                 month = today.month - 3
                 year = today.year
 
@@ -189,9 +178,6 @@ class Patient(models.Model):
                         "Patient must be at least 3 months old."
                     )
 
-                # --------------------------------
-                # Maximum age: 110 years
-                # --------------------------------
                 else:
                     age = today.year - self.date_of_birth.year
 
@@ -206,9 +192,6 @@ class Patient(models.Model):
                             "Patient age cannot be above 110 years."
                         )
 
-                # --------------------------------
-                # Date before 1909
-                # --------------------------------
                 if self.date_of_birth.year < 1909:
                     errors["date_of_birth"] = (
                         "Date of birth cannot be before 1909."
@@ -216,5 +199,6 @@ class Patient(models.Model):
 
         if errors:
             raise ValidationError(errors)
+
     def __str__(self):
         return f"{self.patient_id} - {self.first_name} {self.last_name}"

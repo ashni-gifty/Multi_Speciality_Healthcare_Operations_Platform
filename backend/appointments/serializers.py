@@ -1,3 +1,5 @@
+from datetime import date
+
 from rest_framework import serializers
 
 from staff.models import StaffProfile
@@ -8,13 +10,14 @@ from .models import Appointment
 class AppointmentSerializer(serializers.ModelSerializer):
 
     patient_name = serializers.SerializerMethodField()
-
     doctor_name = serializers.SerializerMethodField()
 
     doctor_staff_id = serializers.CharField(
         source="doctor.staff_id",
         read_only=True,
     )
+
+    booked_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Appointment
@@ -29,7 +32,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "appointment_date",
             "appointment_time",
             "status",
+            "token_status",
+            "token_number",
             "reason",
+            "booked_by",
+            "booked_by_name",
             "created_at",
             "updated_at",
         ]
@@ -40,6 +47,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "doctor_name",
             "doctor_staff_id",
             "status",
+            "token_status",
+            "token_number",
+            "booked_by",
+            "booked_by_name",
             "created_at",
             "updated_at",
         ]
@@ -54,6 +65,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return (
             f"Dr. {obj.doctor.first_name} "
             f"{obj.doctor.last_name}"
+        )
+
+    def get_booked_by_name(self, obj):
+        if not obj.booked_by:
+            return None
+
+        return (
+            f"{obj.booked_by.first_name} "
+            f"{obj.booked_by.last_name}"
         )
 
     def validate_patient(self, value):
@@ -81,52 +101,80 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
 
+        patient = attrs.get(
+            "patient",
+            getattr(self.instance, "patient", None),
+        )
+
         doctor = attrs.get(
             "doctor",
-            getattr(
-                self.instance,
-                "doctor",
-                None,
-            ),
+            getattr(self.instance, "doctor", None),
         )
 
         appointment_date = attrs.get(
             "appointment_date",
-            getattr(
-                self.instance,
-                "appointment_date",
-                None,
-            ),
+            getattr(self.instance, "appointment_date", None),
         )
 
         appointment_time = attrs.get(
             "appointment_time",
-            getattr(
-                self.instance,
-                "appointment_time",
-                None,
-            ),
+            getattr(self.instance, "appointment_time", None),
         )
 
-        if doctor and appointment_date and appointment_time:
+        if not patient or not doctor or not appointment_date or not appointment_time:
+            return attrs
 
-            existing = Appointment.objects.filter(
-                doctor=doctor,
-                appointment_date=appointment_date,
-                appointment_time=appointment_time,
-                status=Appointment.Status.SCHEDULED,
+        today = date.today()
+
+        # -----------------------------------
+        # Past dates are not allowed
+        # -----------------------------------
+
+        if appointment_date < today:
+            raise serializers.ValidationError({
+                "appointment_date":
+                    "Past appointment dates are not allowed."
+            })
+
+        # -----------------------------------
+        # New vs Existing Patient
+        # -----------------------------------
+
+        if appointment_date > today:
+
+            if not patient.appointments.exists():
+                raise serializers.ValidationError({
+                    "appointment_date":
+                        "A newly registered patient can book "
+                        "only today's appointment. Future appointments "
+                        "are allowed only for existing patients."
+                })
+
+        # -----------------------------------
+        # Doctor slot uniqueness
+        # -----------------------------------
+
+        existing = Appointment.objects.filter(
+            doctor=doctor,
+            appointment_date=appointment_date,
+            appointment_time=appointment_time,
+            status__in=[
+                Appointment.Status.BOOKED,
+                Appointment.Status.CHECKED_IN,
+                Appointment.Status.IN_CONSULTATION,
+            ],
+        )
+
+        if self.instance:
+            existing = existing.exclude(
+                pk=self.instance.pk
             )
 
-            if self.instance:
-                existing = existing.exclude(
-                    pk=self.instance.pk
-                )
-
-            if existing.exists():
-                raise serializers.ValidationError({
-                    "appointment_time":
-                        "This doctor already has an appointment "
-                        "at the selected time."
-                })
+        if existing.exists():
+            raise serializers.ValidationError({
+                "appointment_time":
+                    "This doctor already has an appointment "
+                    "at the selected time."
+            })
 
         return attrs
