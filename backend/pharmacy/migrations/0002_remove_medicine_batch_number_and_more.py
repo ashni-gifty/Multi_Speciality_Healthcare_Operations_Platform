@@ -45,11 +45,7 @@ class Migration(migrations.Migration):
             name='is_active',
             field=models.BooleanField(default=True),
         ),
-        migrations.AddField(
-            model_name='medicine',
-            name='supplier',
-            field=models.CharField(blank=True, max_length=150),
-        ),
+        
         migrations.CreateModel(
             name='MedicineStock',
             fields=[
