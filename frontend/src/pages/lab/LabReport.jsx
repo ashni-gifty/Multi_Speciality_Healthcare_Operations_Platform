@@ -93,9 +93,6 @@ const LabReport = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
             <h5 className="fw-bold mb-0 text-slate-900">Diagnostic Reports & Physician Verification</h5>
-            <small className="text-muted">
-              Workflow: Result Ready → Pathologist E-Verification → Transmitted to Ordering Doctor & Patient EMR
-            </small>
           </div>
           <button
             className="btn btn-outline-secondary btn-sm rounded-2 d-flex align-items-center gap-1"

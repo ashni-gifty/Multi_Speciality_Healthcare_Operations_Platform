@@ -177,10 +177,8 @@ const SampleCollection = ({ onSampleCollected }) => {
         <div className="card-body p-4">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
-              <h5 className="fw-bold mb-0 text-slate-900">Specimen Phlebotomy & Sample Collection Queue</h5>
-              <small className="text-muted">
-                Workflow: Request Received → Sample Pending → Sample Collected → Lab Processing
-              </small>
+              <h5 className="fw-bold mb-0 text-slate-900">Sample Collection Queue</h5>
+
             </div>
             <button
               className="btn btn-outline-secondary btn-sm rounded-2 d-flex align-items-center gap-1"

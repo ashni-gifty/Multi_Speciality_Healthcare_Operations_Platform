@@ -113,7 +113,7 @@ const AdminDashboard = () => {
               <Stethoscope size={20} />
             </div>
             <div>
-              <h6 className="mb-0 fw-bold tracking-wide text-white">Healthcare Admin</h6>
+              <h6 className="mb-0 fw-bold tracking-wide text-white">Hospital Admin</h6>
               <span className="badge bg-slate-800 text-slate-400 p-0 text-uppercase" style={{ fontSize: "10px" }}>
                 Hospital Control Center
               </span>
@@ -269,8 +269,8 @@ const AdminDashboard = () => {
             </button>
             <div>
               <h5 className="mb-0 fw-bold text-slate-900">
-                {activeTab === "dashboard" && "Hospital Operations & Revenue Dashboard"}
-                {activeTab === "staff" && "Healthcare Staff Administration"}
+                {activeTab === "dashboard" && "Hospital Dashboard"}
+                {activeTab === "staff" && "Hospital Staff Administration"}
                 {activeTab === "departments" && "Medical Departments & Divisions"}
                 {activeTab === "inventory" && "Medicine Master & Pharmacy Inventory"}
                 {activeTab === "patients" && "Patient Medical Records & History"}
@@ -278,7 +278,7 @@ const AdminDashboard = () => {
                 {activeTab === "reports" && "Executive Financial & Operational Reports"}
               </h5>
               <small className="text-muted">
-                Multi-Speciality Healthcare Operations & Clinical Management Platform
+                Multi-Speciality Hospital Management System
               </small>
             </div>
           </div>
@@ -305,12 +305,11 @@ const AdminDashboard = () => {
               {/* Top Operational Financial Overview (4 Metric Cards) */}
               <div className="row g-3">
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-primary">
+                  <div className="card border-0 shadow-xs rounded-3 bg-primary p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">Doctor Consultation</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-slate-900">₹{stats.consultation_revenue?.toLocaleString()}</h3>
-                        <small className="text-muted">OPD doctor revenue</small>
+                        <span className="text-white small fw-semibold text-uppercase">Doctor <br/>Consultation</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">₹{stats.consultation_revenue?.toLocaleString()}</h3>
                       </div>
                       <div className="p-3 bg-blue-subtle text-primary rounded-3">
                         <Stethoscope size={24} />
@@ -320,12 +319,11 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-success">
+                  <div className="card border-0 shadow-xs rounded-3 bg-success p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">Pharmacy Billing</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-slate-900">₹{stats.pharmacy_billing?.toLocaleString()}</h3>
-                        <small className="text-muted">Dispensary sales</small>
+                        <span className="text-white small fw-semibold text-uppercase">Pharmacy <br/>Billing</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">₹{stats.pharmacy_billing?.toLocaleString()}</h3>
                       </div>
                       <div className="p-3 bg-emerald-subtle text-success rounded-3">
                         <Pill size={24} />
@@ -335,12 +333,11 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-warning">
+                  <div className="card border-0 shadow-xs rounded-3 bg-warning p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">Laboratory Billing</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-slate-900">₹{stats.laboratory_billing?.toLocaleString()}</h3>
-                        <small className="text-muted">Diagnostic lab tests</small>
+                        <span className="text-white small fw-semibold text-uppercase">Laboratory <br/>Billing</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">₹{stats.laboratory_billing?.toLocaleString()}</h3>
                       </div>
                       <div className="p-3 bg-amber-subtle text-warning-emphasis rounded-3">
                         <FlaskConical size={24} />
@@ -350,12 +347,11 @@ const AdminDashboard = () => {
                 </div>
 
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-purple">
+                  <div className="card border-0 shadow-xs rounded-3 bg-purple p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">Total Hospital Revenue</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-slate-900">₹{stats.total_revenue?.toLocaleString()}</h3>
-                        <small className="text-emerald-600 fw-semibold">Combined revenue</small>
+                        <span className="text-white small fw-semibold text-uppercase">Total Hospital <br/>Revenue</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">₹{stats.total_revenue?.toLocaleString()}</h3>
                       </div>
                       <div className="p-3 bg-purple-subtle text-purple rounded-3">
                         <DollarSign size={24} />
@@ -614,6 +610,8 @@ const AdminDashboard = () => {
           .bg-purple-subtle { background-color: #faf5ff; }
           .border-purple { border-color: #9333ea !important; }
           .text-purple { color: #9333ea !important; }
+          .bg-purple {background-color: #6f42c1 !important;}
+          .bg-darkyellow {background-color: #ddaf18 !important;}
 
           .shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.04); }
 

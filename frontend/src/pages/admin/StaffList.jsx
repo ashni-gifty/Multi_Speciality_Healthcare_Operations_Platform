@@ -128,7 +128,6 @@ const StaffList = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Total Personnel</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{staffList.length}</h4>
-                <small className="text-muted">All registered staff</small>
               </div>
               <div className="p-3 bg-blue-subtle text-primary rounded-3">
                 <Users size={22} />
@@ -145,7 +144,6 @@ const StaffList = () => {
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">
                   {staffList.filter((s) => s.role === "DOCTOR" && s.status === "ACTIVE").length}
                 </h4>
-                <small className="text-muted">Physicians & Specialists</small>
               </div>
               <div className="p-3 bg-emerald-subtle text-success rounded-3">
                 <Stethoscope size={22} />
@@ -162,7 +160,6 @@ const StaffList = () => {
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">
                   {staffList.filter((s) => s.role !== "DOCTOR" && s.status === "ACTIVE").length}
                 </h4>
-                <small className="text-muted">Desk, Lab, Pharmacy</small>
               </div>
               <div className="p-3 bg-amber-subtle text-warning-emphasis rounded-3">
                 <Building size={22} />
@@ -179,7 +176,6 @@ const StaffList = () => {
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">
                   {staffList.filter((s) => s.status === "INACTIVE").length}
                 </h4>
-                <small className="text-muted">Historical accounts</small>
               </div>
               <div className="p-3 bg-danger-subtle text-danger rounded-3">
                 <ShieldAlert size={22} />
