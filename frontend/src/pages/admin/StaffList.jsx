@@ -192,9 +192,6 @@ const StaffList = () => {
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
               <h5 className="fw-bold mb-0 text-slate-900">Healthcare Staff Directory</h5>
-              <small className="text-muted">
-                Admin view, role assignment, credential administration, and credential lifecycle
-              </small>
             </div>
             <div className="d-flex align-items-center gap-2">
               <button
@@ -236,7 +233,7 @@ const StaffList = () => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search by name, ID, phone, email, dept..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

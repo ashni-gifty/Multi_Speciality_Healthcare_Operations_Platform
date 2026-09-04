@@ -1,31 +1,29 @@
-from rest_framework import generics
-from accounts.permissions import IsAdminOrLabTechnicianRole
-from .models import LabTest, LabReport
-from .serializers import LabTestSerializer, LabReportSerializer
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+
+from .models import LabReport, LabTest
+from .serializers import LabReportSerializer, LabTestSerializer
 
 
-class LabTestListCreateView(generics.ListCreateAPIView):
-    queryset = LabTest.objects.filter(is_active=True).order_by("test_code")
-    serializer_class = LabTestSerializer
-    permission_classes = [IsAdminOrLabTechnicianRole]
+class LabReportViewSet(viewsets.ModelViewSet):
+    queryset = (
+        LabReport.objects
+        .select_related("patient")
+        .all()
+        .order_by("-created_at")
+    )
 
-
-class LabReportListCreateView(generics.ListCreateAPIView):
-    queryset = LabReport.objects.all().order_by("-created_at")
     serializer_class = LabReportSerializer
-    permission_classes = [IsAdminOrLabTechnicianRole]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        user = self.request.user if self.request.user.is_authenticated else None
-        tech_name = (
-            f"{user.first_name} {user.last_name}"
-            if user and user.first_name
-            else "Mark Vance"
+        serializer.save(
+            status=LabReport.Status.PENDING_SAMPLE
         )
-        serializer.save(technician_name=tech_name)
 
 
-class LabReportDetailView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = LabReport.objects.all()
-    serializer_class = LabReportSerializer
-    permission_classes = [IsAdminOrLabTechnicianRole]
+class LabTestViewSet(viewsets.ModelViewSet):
+    queryset = LabTest.objects.all().order_by("test_name")
+
+    serializer_class = LabTestSerializer
+    permission_classes = [IsAuthenticated]

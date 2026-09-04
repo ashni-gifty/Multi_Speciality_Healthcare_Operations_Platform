@@ -37,7 +37,7 @@ import StaffList from "./StaffList";
 import DepartmentList from "./DepartmentList";
 import MedicineMaster from "./MedicineMaster";
 import PatientHistory from "./PatientHistory";
-import Attendance from "./Attendance";
+
 import AdminReports from "./AdminReports";
 
 const AdminDashboard = () => {
@@ -211,22 +211,6 @@ const AdminDashboard = () => {
                 setSidebarOpen(false);
               }}
             >
-              <Clock size={18} />
-              <span className="fw-medium">Staff Attendance</span>
-            </button>
-
-            <button
-              type="button"
-              className={`nav-btn btn text-start d-flex align-items-center gap-3 px-3 py-2 rounded-3 w-100 ${
-                activeTab === "reports" ? "active text-white" : "text-slate-300"
-              }`}
-              onClick={() => {
-                setActiveTab("reports");
-                setSidebarOpen(false);
-              }}
-            >
-              <BarChart3 size={18} />
-              <span className="fw-medium">Reports & Analytics</span>
             </button>
           </div>
         </div>
@@ -277,9 +261,6 @@ const AdminDashboard = () => {
                 {activeTab === "attendance" && "Staff Attendance & Check-In Logs"}
                 {activeTab === "reports" && "Executive Financial & Operational Reports"}
               </h5>
-              <small className="text-muted">
-                Multi-Speciality Hospital Management System
-              </small>
             </div>
           </div>
 

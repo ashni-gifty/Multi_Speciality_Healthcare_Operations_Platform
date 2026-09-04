@@ -52,7 +52,7 @@ const LabDashboard = () => {
     patient_id: "",
     test_name: "",
     sample_type: "Blood",
-    ordered_by_doctor: "Dr. Robert Smith",
+    ordered_by_doctor: "",
     priority: "ROUTINE",
     notes: "",
   });
@@ -67,31 +67,59 @@ const LabDashboard = () => {
 
   const loadData = async () => {
     setLoading(true);
+
     try {
       const [reportsData, testsData, patientsData] = await Promise.all([
         labService.getReports(),
         labService.getLabTests().catch(() => []),
         labService.getPatients().catch(() => []),
       ]);
+
       setReports(reportsData);
       setLabTests(testsData);
       setPatients(patientsData);
+
       if (patientsData.length > 0 && !orderForm.patient_id) {
-        setOrderForm((prev) => ({ ...prev, patient_id: patientsData[0].patient_id }));
+        setOrderForm((prev) => ({
+          ...prev,
+          patient_id: patientsData[0].patient_id,
+        }));
       }
+
       if (testsData.length > 0 && !orderForm.test_name) {
-        setOrderForm((prev) => ({ ...prev, test_name: testsData[0].test_name, sample_type: testsData[0].sample_type }));
+        setOrderForm((prev) => ({
+          ...prev,
+          test_name: testsData[0].test_name,
+          sample_type: testsData[0].sample_type,
+        }));
       }
     } catch (err) {
       console.error("Error loading lab data:", err);
-      showAlert("danger", "Failed to connect to Laboratory Medicine service.");
+
+      showAlert(
+        "danger",
+        "Failed to connect to Laboratory Medicine service."
+      );
     } finally {
       setLoading(false);
     }
   };
+  
 
+  const [doctors, setDoctors] = useState([]); 
   useEffect(() => {
+    const loadDoctors = async () => {
+    try {
+      const data = await labService.getDoctors();
+      console.log("Doctors loaded:", data);
+      setDoctors(data);
+    } catch (error) {
+      console.error("Failed to load doctors:", error);
+    }
+  };
+
     loadData();
+    loadDoctors();
   }, []);
 
   const handleCreateOrder = async (e) => {
@@ -556,15 +584,36 @@ const LabDashboard = () => {
                     </div>
 
                     <div className="col-md-4">
-                      <label className="form-label small fw-semibold text-slate-700 mb-1">Ordering Doctor *</label>
-                      <input
-                        type="text"
+                      <label className="form-label small fw-semibold text-slate-700 mb-1">
+                        Ordering Doctor *
+                      </label>
+
+                      <select
                         required
-                        placeholder="e.g. Dr. Robert Smith"
-                        className="form-control form-control-sm"
+                        className="form-select form-select-sm"
                         value={orderForm.ordered_by_doctor}
-                        onChange={(e) => setOrderForm({ ...orderForm, ordered_by_doctor: e.target.value })}
-                      />
+                        onChange={(e) =>
+                          setOrderForm({
+                            ...orderForm,
+                            ordered_by_doctor: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select ordering doctor</option>
+
+                        {doctors.map((doctor) => (
+                          <option
+                            key={doctor.id}
+                            value={doctor.first_name && doctor.last_name
+                              ? `Dr. ${doctor.first_name} ${doctor.last_name}`
+                              : doctor.username}
+                          >
+                            {doctor.first_name && doctor.last_name
+                              ? `Dr. ${doctor.first_name} ${doctor.last_name}`
+                              : doctor.username}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="col-md-4">

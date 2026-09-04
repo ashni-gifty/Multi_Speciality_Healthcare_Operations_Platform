@@ -1,37 +1,17 @@
 from rest_framework import serializers
-from .models import LabTest, LabReport
-from patients.models import Patient
-
-
-class LabTestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LabTest
-        fields = [
-            "id",
-            "test_code",
-            "test_name",
-            "category",
-            "sample_type",
-            "price",
-            "normal_range",
-            "unit",
-            "turnaround_time",
-            "is_active",
-        ]
+from .models import LabReport, LabTest
 
 
 class LabReportSerializer(serializers.ModelSerializer):
-    patient_id = serializers.CharField(write_only=True)
-    patient_name = serializers.SerializerMethodField(read_only=True)
-    patient_details = serializers.SerializerMethodField(read_only=True)
-    date = serializers.SerializerMethodField(read_only=True)
+    patient_name = serializers.SerializerMethodField()
+    patient_details = serializers.SerializerMethodField()
 
     class Meta:
         model = LabReport
         fields = [
             "id",
             "report_id",
-            "patient_id",
+            "patient",
             "patient_name",
             "patient_details",
             "test_name",
@@ -42,25 +22,42 @@ class LabReportSerializer(serializers.ModelSerializer):
             "result_value",
             "reference_range",
             "finding_notes",
-            "date",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "report_id", "created_at", "updated_at"]
+
+        read_only_fields = [
+            "id",
+            "report_id",
+            "patient_name",
+            "patient_details",
+            "created_at",
+            "updated_at",
+        ]
 
     def get_patient_name(self, obj):
-        return f"{obj.patient.first_name} {obj.patient.last_name}"
+        patient = obj.patient
+
+        first_name = getattr(patient, "first_name", "") or ""
+        last_name = getattr(patient, "last_name", "") or ""
+
+        name = f"{first_name} {last_name}".strip()
+
+        return name or "Patient"
 
     def get_patient_details(self, obj):
-        return f"{obj.patient.patient_id} • {obj.patient.age}y / {obj.patient.gender}"
+        patient = obj.patient
 
-    def get_date(self, obj):
-        return obj.created_at.strftime("%b %d, %Y - %I:%M %p")
+        patient_id = getattr(patient, "patient_id", None)
 
-    def create(self, validated_data):
-        patient_id_val = validated_data.pop("patient_id")
-        try:
-            patient = Patient.objects.get(patient_id=patient_id_val)
-        except Patient.DoesNotExist:
-            patient = Patient.objects.first()
-        return LabReport.objects.create(patient=patient, **validated_data)
+        if patient_id:
+            return str(patient_id)
+
+        return str(patient.id)
+
+
+class LabTestSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = LabTest
+        fields = "__all__"

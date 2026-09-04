@@ -162,7 +162,6 @@ const DepartmentList = () => {
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
               <h5 className="fw-bold mb-0 text-slate-900">Hospital Medical Departments</h5>
-              <small className="text-muted">Specialities, clinical divisions, and administrative services</small>
             </div>
             <button
               className="btn btn-outline-secondary btn-sm rounded-2 d-flex align-items-center gap-1 ms-auto"
@@ -242,7 +241,7 @@ const DepartmentList = () => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search department name, code, description..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

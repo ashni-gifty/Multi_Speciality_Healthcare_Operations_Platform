@@ -1,82 +1,64 @@
 import api from "./api";
 
-export const LAB_STAGES = {
-  REQUEST_RECEIVED: "REQUEST_RECEIVED",
-  SAMPLE_PENDING: "SAMPLE_PENDING",
-  SAMPLE_COLLECTED: "SAMPLE_COLLECTED",
+export const LAB_STATUS = {
+  PENDING_SAMPLE: "PENDING_SAMPLE",
   PROCESSING: "PROCESSING",
-  RESULT_READY: "RESULT_READY",
-  VERIFIED: "VERIFIED",
-  REPORTED: "REPORTED",
+  COMPLETED: "COMPLETED",
 };
 
 export const STAGE_CONFIG = {
-  REQUEST_RECEIVED: { label: "Request Received", badge: "bg-secondary-subtle text-secondary", step: 1 },
-  SAMPLE_PENDING: { label: "Sample Pending", badge: "bg-warning-subtle text-warning-emphasis", step: 2 },
-  SAMPLE_COLLECTED: { label: "Sample Collected", badge: "bg-info-subtle text-info-emphasis", step: 3 },
-  PROCESSING: { label: "Processing in Lab", badge: "bg-primary-subtle text-primary", step: 4 },
-  RESULT_READY: { label: "Result Ready", badge: "bg-purple-subtle text-purple", step: 5 },
-  VERIFIED: { label: "Verified & Approved", badge: "bg-teal-subtle text-teal-emphasis", step: 6 },
-  REPORTED: { label: "Reported to Doctor", badge: "bg-success-subtle text-success", step: 7 },
+  PENDING_SAMPLE: { label: "Pending Sample", badge: "bg-warning-subtle text-warning-emphasis", step: 1 },
+  PROCESSING: { label: "In Processing", badge: "bg-primary-subtle text-primary", step: 2 },
+  COMPLETED: { label: "Completed", badge: "bg-success-subtle text-success", step: 3 },
 };
 
-export const labService = {
-  // Get all laboratory test orders / reports
+export const STATUS_CONFIG = STAGE_CONFIG;
+
+/**
+ * Helper to normalize API responses that might be paginated
+ */
+const handleResponse = (response) => {
+  const data = response.data;
+  return Array.isArray(data) ? data : data.results || [];
+};
+
+const labService = {
   getReports: async (params = {}) => {
     const response = await api.get("/laboratory/reports/", { params });
-    const data = Array.isArray(response.data) ? response.data : response.data.results || [];
-    return data;
+    return handleResponse(response);
   },
 
-  // Get specific report by ID
-  getReportById: async (id) => {
-    const response = await api.get(`/laboratory/reports/${id}/`);
-    return response.data;
-  },
+  getReportById: async (id) => (await api.get(`/laboratory/reports/${id}/`)).data,
 
-  // Create new lab test request
-  createReport: async (reportData) => {
-    const response = await api.post("/laboratory/reports/", reportData);
-    return response.data;
-  },
+  createReport: async (reportData) => (await api.post("/laboratory/reports/", reportData)).data,
 
-  // Update complete report
-  updateReport: async (id, reportData) => {
-    const response = await api.put(`/laboratory/reports/${id}/`, reportData);
-    return response.data;
-  },
+  updateReport: async (id, reportData) => (await api.put(`/laboratory/reports/${id}/`, reportData)).data,
 
-  // Partial update (status transition, result values, notes)
-  patchReport: async (id, partialData) => {
-    const response = await api.patch(`/laboratory/reports/${id}/`, partialData);
-    return response.data;
-  },
+  patchReport: async (id, partialData) => (await api.patch(`/laboratory/reports/${id}/`, partialData)).data,
 
-  // Get catalog of all diagnostic lab tests master
-  getLabTests: async () => {
-    const response = await api.get("/laboratory/tests/");
-    return Array.isArray(response.data) ? response.data : response.data.results || [];
-  },
+  startProcessing: async (id) => 
+    (await api.patch(`/reports/${id}/`, { status: LAB_STATUS.PROCESSING })).data,
 
-  // Create new diagnostic test in master catalog
-  createLabTest: async (testData) => {
-    const response = await api.post("/laboratory/tests/", testData);
-    return response.data;
-  },
+  completeReport: async (id, { result_value = "", reference_range = "", finding_notes = "" } = {}) => 
+    (await api.patch(`/reports/${id}/`, {
+      status: LAB_STATUS.COMPLETED,
+      result_value,
+      reference_range,
+      finding_notes,
+    })).data,
 
-  // Get patients list for requisition mapping
-  getPatients: async (params = {}) => {
-    const response = await api.get("/patients/", { params });
-    return Array.isArray(response.data) ? response.data : response.data.results || [];
-  },
+  getLabTests: async () => handleResponse(await api.get("/laboratory/tests/")),
 
-  // Get doctors list for ordering doctor selection
+  createLabTest: async (testData) => (await api.post("/laboratory/tests/", testData)).data,
+
+  getPatients: async (params = {}) => handleResponse(await api.get("/patients/", { params })),
+
   getDoctors: async () => {
     try {
       const response = await api.get("/staff/", { params: { role: "DOCTOR" } });
-      const data = Array.isArray(response.data) ? response.data : response.data.results || [];
-      return data.filter((s) => s.role === "DOCTOR");
-    } catch {
+      return handleResponse(response);
+    } catch (error) {
+      console.error("Failed to load doctors:", error);
       return [];
     }
   },

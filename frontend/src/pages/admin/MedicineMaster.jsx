@@ -274,9 +274,6 @@ const MedicineMaster = () => {
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
               <h5 className="fw-bold mb-0 text-slate-900">Medicine Master & Inventory</h5>
-              <small className="text-muted">
-                Admin master catalog for drugs, pharmaceutical forms, batches, manufacturers, and prices
-              </small>
             </div>
             <div className="d-flex align-items-center gap-2">
               <button
@@ -314,7 +311,7 @@ const MedicineMaster = () => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search medicine name, generic formula, batch, SKU..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
