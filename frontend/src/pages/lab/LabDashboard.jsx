@@ -362,7 +362,6 @@ const LabDashboard = () => {
                       <div>
                         <span className="text-white small fw-semibold text-uppercase">Total Requisitions</span>
                         <h3 className="fw-bold mt-1 mb-0 text-white">{reports.length}</h3>
-                        <small className="text-slate-300">Doctor diagnostic orders</small>
                       </div>
                       <div className="p-3 bg-blue-subtle text-primary rounded-3">
                         <FlaskConical size={24} />
@@ -377,7 +376,6 @@ const LabDashboard = () => {
                       <div>
                         <span className="text-white small fw-semibold text-uppercase">Pending Phlebotomy</span>
                         <h3 className="fw-bold mt-1 mb-0 text-white">{pendingSamplesCount}</h3>
-                        <small className="text-white">Specimens to draw</small>
                       </div>
                       <div className="p-3 bg-amber-subtle text-warning rounded-3">
                         <Clock size={24} />
@@ -392,7 +390,6 @@ const LabDashboard = () => {
                       <div>
                         <span className="text-white small fw-semibold text-uppercase">In Processing</span>
                         <h3 className="fw-bold mt-1 mb-0 text-white">{inProcessingCount}</h3>
-                        <small className="text-white">Analyzers active</small>
                       </div>
                       <div className="p-3 bg-info-subtle text-info rounded-3">
                         <Activity size={24} />
@@ -407,7 +404,6 @@ const LabDashboard = () => {
                       <div>
                         <span className="text-white small fw-semibold text-uppercase">Completed & Verified</span>
                         <h3 className="fw-bold mt-1 mb-0 text-white">{completedReportsCount}</h3>
-                        <small className="text-white">Transmitted to Doctors</small>
                       </div>
                       <div className="p-3 bg-emerald-subtle text-success rounded-3">
                         <CheckCircle2 size={24} />
@@ -422,7 +418,6 @@ const LabDashboard = () => {
                 <div className="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
                   <div>
                     <h6 className="fw-bold mb-0 text-slate-900">Recent Diagnostic Test Orders</h6>
-                    <small className="text-muted">Live patient requisitions</small>
                   </div>
                   <button className="btn btn-outline-primary btn-sm rounded-2 px-3 fw-medium" onClick={() => setActiveTab("results")}>
                     Enter Results

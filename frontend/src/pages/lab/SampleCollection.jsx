@@ -132,7 +132,6 @@ const SampleCollection = ({ onSampleCollected }) => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Pending Specimen Draw</span>
                 <h4 className="fw-bold mt-1 mb-0 text-warning-emphasis">{pendingCount}</h4>
-                <small className="text-muted">Awaiting phlebotomy collection</small>
               </div>
               <div className="p-3 bg-amber-subtle text-warning-emphasis rounded-3">
                 <Clock size={22} />
@@ -147,7 +146,6 @@ const SampleCollection = ({ onSampleCollected }) => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Collected & In-Lab</span>
                 <h4 className="fw-bold mt-1 mb-0 text-success">{collectedCount}</h4>
-                <small className="text-muted">Specimens received in lab</small>
               </div>
               <div className="p-3 bg-emerald-subtle text-success rounded-3">
                 <CheckCircle2 size={22} />
@@ -162,7 +160,6 @@ const SampleCollection = ({ onSampleCollected }) => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Total Lab Requisitions</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{reports.length}</h4>
-                <small className="text-muted">Doctor diagnostic orders</small>
               </div>
               <div className="p-3 bg-blue-subtle text-primary rounded-3">
                 <FlaskConical size={22} />
@@ -207,7 +204,7 @@ const SampleCollection = ({ onSampleCollected }) => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search patient, test name, order ID..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

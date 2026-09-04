@@ -271,10 +271,6 @@ const handleSendToDoctor = async (report) => {
             <h5 className="fw-bold mb-0 text-slate-900">
               Diagnostic Reports & Physician Verification
             </h5>
-
-            <div className="text-muted small mt-1">
-              Manage laboratory requests, results and completed reports.
-            </div>
           </div>
 
           <button
@@ -329,7 +325,7 @@ const handleSendToDoctor = async (report) => {
             <input
               type="text"
               className="form-control border-start-0"
-              placeholder="Search reports by patient, test name, doctor..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) =>
                 setSearchQuery(e.target.value)

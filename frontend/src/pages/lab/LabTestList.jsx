@@ -113,9 +113,6 @@ const LabTestList = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
             <h5 className="fw-bold mb-0 text-slate-900">Diagnostic Lab Tests Master Catalog</h5>
-            <small className="text-muted">
-              Standard operating procedures, specimen parameters, reference ranges, and test tariffs
-            </small>
           </div>
           <div className="d-flex align-items-center gap-2">
             <button
@@ -154,7 +151,7 @@ const LabTestList = () => {
             <input
               type="text"
               className="form-control border-start-0"
-              placeholder="Search test name, code, category..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
