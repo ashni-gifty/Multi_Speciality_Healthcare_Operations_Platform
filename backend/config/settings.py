@@ -45,12 +45,9 @@ INSTALLED_APPS = [
     'accounts',
     'staff',
     'patients',
-<<<<<<< HEAD
     'pharmacy',
     'prescriptions',
     'laboratory',
-=======
->>>>>>> 542af1449569d94938888abbe2cb0526e80c41ba
 ]
 
 MIDDLEWARE = [
