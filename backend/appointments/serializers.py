@@ -11,10 +11,31 @@ from .models import Appointment
 class AppointmentSerializer(serializers.ModelSerializer):
 
     patient_name = serializers.SerializerMethodField()
+    patient_id = serializers.CharField(
+        source="patient.patient_id",
+        read_only=True,
+    )
+    patient_gender = serializers.CharField(
+        source="patient.gender",
+        read_only=True,
+    )
+    patient_phone = serializers.CharField(
+        source="patient.phone",
+        read_only=True,
+    )
+    patient_age = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
 
     doctor_staff_id = serializers.CharField(
         source="doctor.staff_id",
+        read_only=True,
+    )
+    doctor_user_id = serializers.IntegerField(
+        source="doctor.user.id",
+        read_only=True,
+    )
+    doctor_username = serializers.CharField(
+        source="doctor.user.username",
         read_only=True,
     )
 
@@ -26,9 +47,15 @@ class AppointmentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "patient",
+            "patient_id",
             "patient_name",
+            "patient_gender",
+            "patient_phone",
+            "patient_age",
             "doctor",
             "doctor_staff_id",
+            "doctor_user_id",
+            "doctor_username",
             "doctor_name",
             "appointment_date",
             "appointment_time",
@@ -44,17 +71,25 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             "id",
+            "patient_id",
             "patient_name",
+            "patient_gender",
+            "patient_phone",
+            "patient_age",
             "doctor_name",
             "doctor_staff_id",
-            "status",
-            "token_status",
-            "token_number",
             "booked_by",
             "booked_by_name",
             "created_at",
             "updated_at",
         ]
+
+    def get_patient_age(self, obj):
+        if not obj.patient or not obj.patient.date_of_birth:
+            return None
+        today = date.today()
+        dob = obj.patient.date_of_birth
+        return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
 
     def get_patient_name(self, obj):
         return (
@@ -101,10 +136,24 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
-        appointment_date = attrs.get("appointment_date")
-        appointment_time = attrs.get("appointment_time")
-        doctor = attrs.get("doctor")
-        patient = attrs.get("patient")
+        # If this is a partial update on an existing instance and no booking schedule fields are being modified, skip slot re-validation
+        is_schedule_update = (
+            self.instance is None
+            or "appointment_date" in attrs
+            or "appointment_time" in attrs
+            or "doctor" in attrs
+            or "patient" in attrs
+        )
+        if not is_schedule_update:
+            return attrs
+
+        appointment_date = attrs.get("appointment_date", getattr(self.instance, "appointment_date", None))
+        appointment_time = attrs.get("appointment_time", getattr(self.instance, "appointment_time", None))
+        doctor = attrs.get("doctor", getattr(self.instance, "doctor", None))
+        patient = attrs.get("patient", getattr(self.instance, "patient", None))
+
+        if not appointment_date or not appointment_time or not doctor or not patient:
+            return attrs
 
         # -----------------------------
         # Patient booking date rules
@@ -181,7 +230,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
         # Today's past-time check
         # -----------------------------
 
-        if appointment_date == today:
+        if appointment_date == today and self.instance is None:
             current_time = timezone.localtime().time()
 
             if appointment_time <= current_time:

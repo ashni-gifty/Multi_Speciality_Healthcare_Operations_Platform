@@ -9,7 +9,10 @@ const api = axios.create({
 // Request interceptor: Attach JWT Bearer Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("access_token");
+    const token =
+      localStorage.getItem("access") ||
+      localStorage.getItem("access_token") ||
+      localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -40,7 +43,9 @@ api.interceptors.response.use(
 
     // Check if error is 401 and request was not already retried
     if (error.response?.status === 401 && !originalRequest._retry) {
-      const refreshToken = localStorage.getItem("refresh_token");
+      const refreshToken =
+        localStorage.getItem("refresh") ||
+        localStorage.getItem("refresh_token");
 
       // Avoid infinite loop if refreshing fails or on login endpoint
       if (!refreshToken || originalRequest.url?.includes("/login/") || originalRequest.url?.includes("/token/refresh/")) {

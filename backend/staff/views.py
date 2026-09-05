@@ -21,10 +21,12 @@ from .serializers import (
 
 
 class DepartmentListCreateView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-        IsAdminRole,
-    ]
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminRole()]
 
     def get(self, request):
         departments = Department.objects.all()
@@ -45,10 +47,12 @@ class DepartmentListCreateView(APIView):
 
 
 class DepartmentDetailView(APIView):
-    permission_classes = [
-        IsAuthenticated,
-        IsAdminRole,
-    ]
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminRole()]
 
     def get_object(self, department_id):
         try:
@@ -89,11 +93,12 @@ class DepartmentDetailView(APIView):
 
 
 class StaffListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    permission_classes = [
-        IsAuthenticated,
-        IsAdminRole,
-    ]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminRole()]
 
     def get(self, request):
 
@@ -137,11 +142,12 @@ class StaffListCreateView(APIView):
 
 
 class StaffDetailView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    permission_classes = [
-        IsAuthenticated,
-        IsAdminRole,
-    ]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminRole()]
 
     def get_object(self, staff_id):
 
@@ -312,11 +318,12 @@ class AdminDashboardView(APIView):
         })
 
 class DoctorAvailabilityListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
 
-    permission_classes = [
-        IsAuthenticated,
-        IsAdminRole,
-    ]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminOrDoctorRole()]
 
     def get(self, request):
 
@@ -330,7 +337,10 @@ class DoctorAvailabilityListCreateView(APIView):
             )
         )
 
-        if doctor_id:
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role == CustomUser.Role.DOCTOR and hasattr(request.user, "staff_profile"):
+            availability = availability.filter(doctor=request.user.staff_profile)
+        elif doctor_id:
             availability = availability.filter(
                 doctor_id=doctor_id
             )

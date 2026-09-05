@@ -20,13 +20,13 @@ class CreateAppointmentBillView(APIView):
     def post(self, request, appointment_id):
 
         # --------------------------------
-        # Only Receptionist can create bill
+        # Only Receptionist or Admin can create bill
         # --------------------------------
-
-        if request.user.role != CustomUser.Role.RECEPTIONIST:
+        role = str(getattr(request.user, "role", "")).upper()
+        if role not in [CustomUser.Role.RECEPTIONIST, CustomUser.Role.ADMIN] and not request.user.is_superuser:
             return Response(
                 {
-                    "detail": "Only receptionist can create appointment bills."
+                    "detail": "Only receptionist or admin can create appointment bills."
                 },
                 status=status.HTTP_403_FORBIDDEN
             )
@@ -157,10 +157,11 @@ class PayBillView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, bill_id):
-        # Only receptionist can collect payment
-        if request.user.role != CustomUser.Role.RECEPTIONIST:
+        # Only receptionist or admin can collect payment
+        role = str(getattr(request.user, "role", "")).upper()
+        if role not in [CustomUser.Role.RECEPTIONIST, CustomUser.Role.ADMIN] and not request.user.is_superuser:
             return Response(
-                {"detail": "Only receptionist can process payments."},
+                {"detail": "Only receptionist or admin can process payments."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 

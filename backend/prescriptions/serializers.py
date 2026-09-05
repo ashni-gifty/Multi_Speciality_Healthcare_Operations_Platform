@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from consultations.models import Consultation
 from .models import (
     Prescription,
     PrescriptionMedicine,
@@ -74,6 +75,13 @@ class PrescriptionSerializer(serializers.ModelSerializer):
     patient_name = serializers.SerializerMethodField()
     doctor_name_display = serializers.SerializerMethodField()
 
+    consultation = serializers.PrimaryKeyRelatedField(
+        queryset=Consultation.objects.all(),
+        validators=[],
+        required=False,
+        allow_null=True,
+    )
+
     medicines = PrescriptionMedicineSerializer(
         source="prescription_medicines",
         many=True,
@@ -141,11 +149,6 @@ class PrescriptionSerializer(serializers.ModelSerializer):
         return obj.doctor_name
 
     def validate_consultation(self, value):
-        if hasattr(value, "prescription"):
-            raise serializers.ValidationError(
-                "A prescription already exists for this consultation."
-            )
-
         return value
 
     def create(self, validated_data):
@@ -165,24 +168,48 @@ class PrescriptionSerializer(serializers.ModelSerializer):
             "external_lab_tests", []
         )
 
-        consultation = validated_data["consultation"]
+        consultation = validated_data.get("consultation")
 
-        validated_data["patient"] = consultation.patient
-        validated_data["doctor"] = consultation.doctor.user
+        if consultation:
+            validated_data["patient"] = consultation.patient
+            validated_data["doctor"] = consultation.doctor.user if hasattr(consultation.doctor, "user") else None
+            validated_data["doctor_name"] = (
+                f"Dr. {consultation.doctor.first_name} "
+                f"{consultation.doctor.last_name}"
+            )
+            validated_data["diagnosis"] = (
+                validated_data.get("diagnosis")
+                or consultation.diagnosis
+                or "General Consultation"
+            )
+        else:
+            if "patient" not in validated_data:
+                patient_id = self.context["request"].data.get("patient")
+                from patients.models import Patient
+                validated_data["patient"] = Patient.objects.get(id=patient_id)
+            if "doctor" not in validated_data:
+                validated_data["doctor"] = self.context["request"].user
+            if "doctor_name" not in validated_data:
+                user = self.context["request"].user
+                validated_data["doctor_name"] = f"Dr. {user.first_name} {user.last_name}"
+            if "diagnosis" not in validated_data or not validated_data["diagnosis"]:
+                validated_data["diagnosis"] = "General Consultation"
 
-        validated_data["doctor_name"] = (
-            f"Dr. {consultation.doctor.first_name} "
-            f"{consultation.doctor.last_name}"
-        )
-
-        validated_data["diagnosis"] = (
-            validated_data.get("diagnosis")
-            or consultation.diagnosis
-        )
-
-        prescription = Prescription.objects.create(
-            **validated_data
-        )
+        if consultation:
+            existing_prescription = Prescription.objects.filter(consultation=consultation).first()
+            if existing_prescription:
+                existing_prescription.prescription_medicines.all().delete()
+                existing_prescription.external_medicines.all().delete()
+                existing_prescription.prescription_lab_tests.all().delete()
+                existing_prescription.external_lab_tests.all().delete()
+                for key, val in validated_data.items():
+                    setattr(existing_prescription, key, val)
+                existing_prescription.save()
+                prescription = existing_prescription
+            else:
+                prescription = Prescription.objects.create(**validated_data)
+        else:
+            prescription = Prescription.objects.create(**validated_data)
 
         for medicine_data in medicines_data:
             PrescriptionMedicine.objects.create(

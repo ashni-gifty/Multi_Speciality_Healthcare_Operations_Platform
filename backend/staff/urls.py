@@ -12,51 +12,30 @@ from .views import (
 
 
 urlpatterns = [
-    path(
-        "admin/dashboard/",
-        AdminDashboardView.as_view(),
-        name="admin-dashboard"
-    ),
+    # Dashboard
+    path("admin/dashboard/", AdminDashboardView.as_view(), name="admin-dashboard"),
+    path("admin/", AdminDashboardView.as_view(), name="admin-dashboard-alt"),
+    path("staff/admin/dashboard/", AdminDashboardView.as_view(), name="staff-admin-dashboard"),
 
-    path(
-        "admin/",
-        AdminDashboardView.as_view(),
-        name="admin-dashboard-alt"
-    ),
+    # Doctors (Must be before staff/<str:staff_id>/)
+    path("doctors/", DoctorListView.as_view(), name="doctor-list"),
+    path("staff/doctors/", DoctorListView.as_view(), name="staff-doctor-list"),
 
-    path(
-        "staff/",
-        StaffListCreateView.as_view(),
-        name="staff-list-create"
-    ),
+    # Availability (Must be before staff/<str:staff_id>/)
+    path("doctor-availability/", DoctorAvailabilityListCreateView.as_view(), name="doctor-availability"),
+    path("staff/doctor-availability/", DoctorAvailabilityListCreateView.as_view(), name="staff-doctor-availability"),
 
-    path(
-        "doctors/",
-        DoctorListView.as_view(),
-        name="doctor-list",
-    ),
+    # Departments (Must be before staff/<str:staff_id>/)
+    path("departments/", DepartmentListCreateView.as_view(), name="department-list"),
+    path("departments/<str:department_id>/", DepartmentDetailView.as_view(), name="department-detail"),
+    path("staff/departments/", DepartmentListCreateView.as_view(), name="staff-department-list"),
+    path("staff/departments/<str:department_id>/", DepartmentDetailView.as_view(), name="staff-department-detail"),
 
-    path(
-        "departments/",
-        DepartmentListCreateView.as_view(),
-        name="department-list"
-    ),
+    # Staff List
+    path("staff/", StaffListCreateView.as_view(), name="staff-list-create"),
+    path("staff/staff/", StaffListCreateView.as_view(), name="staff-staff-list-create"),
 
-    path(
-        "departments/<str:department_id>/",
-        DepartmentDetailView.as_view(),
-        name="department-detail"
-    ),
-
-    path(
-        "staff/<str:staff_id>/",
-        StaffDetailView.as_view(),
-        name="staff-detail"
-    ),
-
-    path(
-        "doctor-availability/",
-        DoctorAvailabilityListCreateView.as_view(),
-        name="doctor-availability",
-    ),
+    # Parameterized Staff Detail (Must be last)
+    path("staff/staff/<str:staff_id>/", StaffDetailView.as_view(), name="staff-staff-detail"),
+    path("staff/<str:staff_id>/", StaffDetailView.as_view(), name="staff-detail"),
 ]

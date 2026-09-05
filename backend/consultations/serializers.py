@@ -1,12 +1,35 @@
 from rest_framework import serializers
 
+from appointments.models import Appointment
 from .models import Consultation
 
 
 class ConsultationSerializer(serializers.ModelSerializer):
 
+    appointment = serializers.PrimaryKeyRelatedField(
+        queryset=Appointment.objects.all(),
+        validators=[],
+    )
+
     patient_name = serializers.SerializerMethodField()
     doctor_name = serializers.SerializerMethodField()
+
+    chief_complaint = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+    symptoms = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+    diagnosis = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
+    clinical_notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+    )
 
     class Meta:
         model = Consultation
@@ -45,17 +68,14 @@ class ConsultationSerializer(serializers.ModelSerializer):
 
     def validate_appointment(self, value):
         if value.status not in [
+            value.Status.BOOKED,
+            value.Status.TOKEN_PENDING,
             value.Status.CHECKED_IN,
             value.Status.IN_CONSULTATION,
             value.Status.COMPLETED,
         ]:
             raise serializers.ValidationError(
                 "Consultation can be created only for an active consultation appointment."
-            )
-
-        if hasattr(value, "consultation"):
-            raise serializers.ValidationError(
-                "A consultation already exists for this appointment."
             )
 
         return value
@@ -66,7 +86,19 @@ class ConsultationSerializer(serializers.ModelSerializer):
         validated_data["patient"] = appointment.patient
         validated_data["doctor"] = appointment.doctor
 
+        if not validated_data.get("chief_complaint"):
+            validated_data["chief_complaint"] = appointment.reason or "General Consultation"
+        if not validated_data.get("diagnosis"):
+            validated_data["diagnosis"] = "General Consultation / Routine Review"
+
         appointment.status = appointment.Status.IN_CONSULTATION
         appointment.save(update_fields=["status", "updated_at"])
+
+        existing = Consultation.objects.filter(appointment=appointment).first()
+        if existing:
+            for key, val in validated_data.items():
+                setattr(existing, key, val)
+            existing.save()
+            return existing
 
         return Consultation.objects.create(**validated_data)

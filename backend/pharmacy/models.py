@@ -1,12 +1,6 @@
 from datetime import date
 from django.db import models
-<<<<<<< HEAD
 from patients.models import Patient
-=======
-from django.conf import settings
-from patients.models import Patient
-from prescriptions.models import Prescription
->>>>>>> origin/feature/pharmacist
 
 
 class Medicine(models.Model):
@@ -57,7 +51,6 @@ class Medicine(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-<<<<<<< HEAD
         return f"{self.medicine_id} - {self.name}"
 
 
@@ -110,6 +103,8 @@ class PharmacyBill(models.Model):
     class PaymentMethod(models.TextChoices):
         CASH = "CASH", "Cash"
         GPAY = "GPAY", "GPay"
+        CARD = "CARD", "Card"
+        UPI = "UPI", "UPI"
 
     bill_number = models.CharField(
         max_length=30,
@@ -159,7 +154,6 @@ class PharmacyBill(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
-
         if not self.bill_number:
             last_bill = PharmacyBill.objects.order_by("-id").first()
             next_id = (last_bill.id + 1) if last_bill else 1
@@ -206,31 +200,3 @@ class PharmacyBillItem(models.Model):
 
     def __str__(self):
         return f"{self.bill.bill_number} - {self.medicine.name}"
-    
-=======
-        return f"{self.name} ({self.batch_number}) - Stock: {self.quantity}"
-
-
-class PharmacyBill(models.Model):
-    serial_number = models.CharField(max_length=30, unique=True, blank=True)
-    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="pharmacy_bills")
-    prescription = models.ForeignKey(Prescription, on_delete=models.SET_NULL, null=True, blank=True, related_name="pharmacy_bills")
-    medicines = models.JSONField(default=list)
-    payment_mode = models.CharField(max_length=30, default="Cash")
-    grand_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    gst = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    amount_payable = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    paid_status = models.BooleanField(default=False)
-    issued_date = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="pharmacy_bills")
-
-    class Meta:
-        ordering = ["-issued_date"]
-
-    def save(self, *args, **kwargs):
-        if not self.serial_number:
-            last_bill = PharmacyBill.objects.order_by("-id").first()
-            next_id = (last_bill.id + 1) if last_bill else 1
-            self.serial_number = f"PHB-{next_id:06d}"
-        super().save(*args, **kwargs)
->>>>>>> origin/feature/pharmacist

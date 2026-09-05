@@ -14,8 +14,10 @@ class IsReceptionistOrReadOnly(BasePermission):
         if request.method in ["GET", "HEAD", "OPTIONS"]:
             return True
 
-        # Only Receptionist can create, edit or deactivate patients.
+        # Receptionists and Admins/Superusers can create, edit or deactivate patients.
+        role = str(getattr(request.user, "role", "")).upper()
         return (
-            request.user.role
-            == CustomUser.Role.RECEPTIONIST
+            role in [CustomUser.Role.RECEPTIONIST, CustomUser.Role.ADMIN]
+            or request.user.is_superuser
+            or request.user.is_staff
         )

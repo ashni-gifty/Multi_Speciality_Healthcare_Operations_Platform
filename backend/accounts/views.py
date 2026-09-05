@@ -29,6 +29,8 @@ class LoginView(APIView):
             # DRF Token for fallback
             token, _ = Token.objects.get_or_create(user=user)
 
+            staff_profile = getattr(user, "staff_profile", None)
+
             return Response({
                 "message": "Login successful",
                 "access": access_token,
@@ -42,6 +44,8 @@ class LoginView(APIView):
                     "role": user.role,
                     "first_name": user.first_name,
                     "last_name": user.last_name,
+                    "staff_profile_id": staff_profile.id if staff_profile else None,
+                    "staff_id": staff_profile.staff_id if staff_profile else None,
                 }
             }, status=status.HTTP_200_OK)
 

@@ -3,8 +3,8 @@ import { useAuth } from "./context/AuthContext";
 
 import Login from "./pages/Login";
 import AdminDashboard from "./pages/admin/AdminDashboard";
-import Receptionist from "./pages/receptionist/Receptionist";
-import Doctor from "./pages/Doctor";
+import ReceptionistDashboard from "./pages/receptionist/ReceptionistDashboard";
+import DoctorDashboard from "./pages/doctor/DoctorDashboard";
 import LabDashboard from "./pages/lab/LabDashboard";
 import PharmacyDashboard from "./pages/pharmacist/PharmacyDashboard";
 import MedicineStock from "./pages/pharmacist/MedicineStock";
@@ -54,8 +54,8 @@ function App() {
       <Routes>
         <Route path="/" element={<RootRedirect />} />
         <Route path="/admin" element={<ProtectedRoute allowedRoles={["ADMIN"]}><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/doctor" element={<ProtectedRoute allowedRoles={["DOCTOR"]}><Doctor /></ProtectedRoute>} />
-        <Route path="/receptionist" element={<ProtectedRoute allowedRoles={["RECEPTIONIST"]}><Receptionist /> </ProtectedRoute>}/>
+        <Route path="/doctor" element={<ProtectedRoute allowedRoles={["DOCTOR"]}><DoctorDashboard /></ProtectedRoute>} />
+        <Route path="/receptionist" element={<ProtectedRoute allowedRoles={["RECEPTIONIST"]}><ReceptionistDashboard /></ProtectedRoute>} />
         <Route path="/lab-technician" element={<ProtectedRoute allowedRoles={["LAB_TECHNICIAN", "LAB"]}><LabDashboard /></ProtectedRoute>} />
         <Route path="/lab" element={<ProtectedRoute allowedRoles={["LAB_TECHNICIAN", "LAB"]}><LabDashboard /></ProtectedRoute>} />
         <Route element={<ProtectedRoute allowedRoles={["PHARMACIST"]}><PharmacistLayout /></ProtectedRoute>}>

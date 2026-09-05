@@ -22,8 +22,9 @@ class PrescriptionListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        user_role = str(getattr(self.request.user, "role", "")).upper()
 
-        if self.request.user.role == CustomUser.Role.DOCTOR:
+        if user_role == CustomUser.Role.DOCTOR:
             queryset = queryset.filter(
                 doctor=self.request.user
             )
@@ -31,8 +32,10 @@ class PrescriptionListCreateView(generics.ListCreateAPIView):
         return queryset
 
     def create(self, request, *args, **kwargs):
-
-        if request.user.role != CustomUser.Role.DOCTOR:
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role not in [CustomUser.Role.DOCTOR, CustomUser.Role.ADMIN] and not (
+            request.user.is_superuser or request.user.is_staff
+        ):
             return Response(
                 {"detail": "Only doctors can create prescriptions."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -55,8 +58,9 @@ class PrescriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+        user_role = str(getattr(self.request.user, "role", "")).upper()
 
-        if self.request.user.role == CustomUser.Role.DOCTOR:
+        if user_role == CustomUser.Role.DOCTOR:
             queryset = queryset.filter(
                 doctor=self.request.user
             )
@@ -64,8 +68,10 @@ class PrescriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
         return queryset
 
     def update(self, request, *args, **kwargs):
-
-        if request.user.role != CustomUser.Role.DOCTOR:
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role not in [CustomUser.Role.DOCTOR, CustomUser.Role.ADMIN] and not (
+            request.user.is_superuser or request.user.is_staff
+        ):
             return Response(
                 {"detail": "Only doctors can update prescriptions."},
                 status=status.HTTP_403_FORBIDDEN,
@@ -74,8 +80,10 @@ class PrescriptionDetailView(generics.RetrieveUpdateDestroyAPIView):
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-
-        if request.user.role != CustomUser.Role.DOCTOR:
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role not in [CustomUser.Role.DOCTOR, CustomUser.Role.ADMIN] and not (
+            request.user.is_superuser or request.user.is_staff
+        ):
             return Response(
                 {"detail": "Only doctors can delete prescriptions."},
                 status=status.HTTP_403_FORBIDDEN,

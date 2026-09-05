@@ -17,74 +17,116 @@ class IsAuthenticatedUser(BasePermission):
 
 class IsAdminRole(BasePermission):
     """
-    Allows access only to Admin users.
+    Allows access to Admin users, Superusers, and staff.
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == CustomUser.Role.ADMIN
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                str(getattr(request.user, "role", "")).upper() == CustomUser.Role.ADMIN
+                or request.user.is_superuser
+                or request.user.is_staff
+            )
         )
 
 
 class IsDoctorRole(BasePermission):
     """
-    Allows access only to Doctor users.
+    Allows access to Doctor users and Admins.
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == CustomUser.Role.DOCTOR
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                str(getattr(request.user, "role", "")).upper() in [
+                    CustomUser.Role.DOCTOR,
+                    CustomUser.Role.ADMIN,
+                ]
+                or request.user.is_superuser
+                or request.user.is_staff
+            )
         )
 
 
 class IsReceptionistRole(BasePermission):
     """
-    Allows access only to Receptionist users.
+    Allows access to Receptionist users and Admins.
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == CustomUser.Role.RECEPTIONIST
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                str(getattr(request.user, "role", "")).upper() in [
+                    CustomUser.Role.RECEPTIONIST,
+                    CustomUser.Role.ADMIN,
+                ]
+                or request.user.is_superuser
+                or request.user.is_staff
+            )
         )
 
 
 class IsLabTechnicianRole(BasePermission):
     """
-    Allows access only to Lab Technician users.
+    Allows access to Lab Technician users and Admins.
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == CustomUser.Role.LAB_TECHNICIAN
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                str(getattr(request.user, "role", "")).upper() in [
+                    CustomUser.Role.LAB_TECHNICIAN,
+                    CustomUser.Role.ADMIN,
+                ]
+                or request.user.is_superuser
+                or request.user.is_staff
+            )
         )
 
 
 class IsAdminOrLabTechnicianRole(BasePermission):
-    """Allows laboratory work only to Admins and Lab Technicians."""
+    """Allows laboratory work to Admins, Lab Technicians, and Superusers."""
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role in [
-                CustomUser.Role.ADMIN,
-                CustomUser.Role.LAB_TECHNICIAN,
-            ]
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                str(getattr(request.user, "role", "")).upper() in [
+                    CustomUser.Role.ADMIN,
+                    CustomUser.Role.LAB_TECHNICIAN,
+                ]
+                or request.user.is_superuser
+                or request.user.is_staff
+            )
         )
 
 
 class IsPharmacistRole(BasePermission):
     """
-    Allows access only to Pharmacist users.
+    Allows access to Pharmacist users and Admins.
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == CustomUser.Role.PHARMACIST
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                str(getattr(request.user, "role", "")).upper() in [
+                    CustomUser.Role.PHARMACIST,
+                    CustomUser.Role.ADMIN,
+                ]
+                or request.user.is_superuser
+                or request.user.is_staff
+            )
         )
 
 
@@ -94,11 +136,16 @@ class IsAdminOrDoctorRole(BasePermission):
     """
 
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role in [
-                CustomUser.Role.ADMIN,
-                CustomUser.Role.DOCTOR,
-            ]
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and (
+                str(getattr(request.user, "role", "")).upper() in [
+                    CustomUser.Role.ADMIN,
+                    CustomUser.Role.DOCTOR,
+                ]
+                or request.user.is_superuser
+                or request.user.is_staff
+            )
         )
     

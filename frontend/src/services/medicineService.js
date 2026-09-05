@@ -36,6 +36,27 @@ export const medicineService = {
     const response = await api.delete(`/pharmacy/medicines/${id}/`);
     return response.data;
   },
+
+  // Stock Batches
+  getStocks: async (params = {}) => {
+    const response = await api.get("/pharmacy/stocks/", { params });
+    return Array.isArray(response.data) ? response.data : response.data.results || [];
+  },
+
+  addStock: async (stockData) => {
+    const response = await api.post("/pharmacy/stocks/", stockData);
+    return response.data;
+  },
+
+  updateStock: async (id, stockData) => {
+    const response = await api.put(`/pharmacy/stocks/${id}/`, stockData);
+    return response.data;
+  },
+
+  deleteStock: async (id) => {
+    const response = await api.delete(`/pharmacy/stocks/${id}/`);
+    return response.data;
+  },
 };
 
 export default medicineService;

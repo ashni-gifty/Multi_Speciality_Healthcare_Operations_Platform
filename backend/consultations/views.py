@@ -19,10 +19,15 @@ class ConsultationListCreateView(APIView):
             "appointment",
         )
 
-        if request.user.role == CustomUser.Role.DOCTOR:
-            consultations = consultations.filter(
-                doctor=request.user.staff_profile
-            )
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role == CustomUser.Role.DOCTOR:
+            doctor_profile = getattr(request.user, "staff_profile", None)
+            if doctor_profile:
+                consultations = consultations.filter(
+                    doctor=doctor_profile
+                )
+            else:
+                consultations = consultations.none()
 
         patient_id = request.query_params.get("patient_id")
 
@@ -39,8 +44,10 @@ class ConsultationListCreateView(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-
-        if request.user.role != CustomUser.Role.DOCTOR:
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role not in [CustomUser.Role.DOCTOR, CustomUser.Role.ADMIN] and not (
+            request.user.is_superuser or request.user.is_staff
+        ):
             return Response(
                 {
                     "detail": "Only doctors can create consultations."
@@ -56,8 +63,9 @@ class ConsultationListCreateView(APIView):
 
         appointment = serializer.validated_data["appointment"]
 
-        # Doctor can only consult their own appointment
-        if appointment.doctor != request.user.staff_profile:
+        # Doctor can only consult their own appointment if they have a staff profile
+        doctor_profile = getattr(request.user, "staff_profile", None)
+        if user_role == CustomUser.Role.DOCTOR and doctor_profile and appointment.doctor != doctor_profile:
             return Response(
                 {
                     "detail": (
@@ -92,8 +100,10 @@ class ConsultationDetailView(APIView):
         except Consultation.DoesNotExist:
             return None
 
-        if request.user.role == CustomUser.Role.DOCTOR:
-            if consultation.doctor != request.user.staff_profile:
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role == CustomUser.Role.DOCTOR:
+            doctor_profile = getattr(request.user, "staff_profile", None)
+            if doctor_profile and consultation.doctor != doctor_profile:
                 return None
 
         return consultation
@@ -113,8 +123,10 @@ class ConsultationDetailView(APIView):
         return Response(serializer.data)
 
     def put(self, request, pk):
-
-        if request.user.role != CustomUser.Role.DOCTOR:
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role not in [CustomUser.Role.DOCTOR, CustomUser.Role.ADMIN] and not (
+            request.user.is_superuser or request.user.is_staff
+        ):
             return Response(
                 {"detail": "Only doctors can update consultations."},
                 status=status.HTTP_403_FORBIDDEN,

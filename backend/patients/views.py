@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -16,45 +17,36 @@ class PatientListCreateView(APIView):
     ]
 
     def get(self, request):
-
-        patients = Patient.objects.filter(
-            is_active=True
-        ).select_related(
+        include_inactive = request.query_params.get("include_inactive") == "true"
+        patients = Patient.objects.all() if include_inactive else Patient.objects.filter(is_active=True)
+        
+        patients = patients.select_related(
             "created_by",
             "created_by__staff_profile",
         ).order_by("-registered_at")
 
-        # Search by patient ID
-        patient_id = request.query_params.get(
-            "patient_id"
-        )
+        search = request.query_params.get("search")
+        patient_id = request.query_params.get("patient_id")
+        phone = request.query_params.get("phone")
+        name = request.query_params.get("name")
 
-        # Search by phone
-        phone = request.query_params.get(
-            "phone"
-        )
-
-        # Search by name
-        name = request.query_params.get(
-            "name"
-        )
-
-        if patient_id:
+        if search:
             patients = patients.filter(
-                patient_id__iexact=patient_id
+                Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(patient_id__icontains=search)
+                | Q(phone__icontains=search)
+                | Q(email__icontains=search)
             )
-
-        elif phone:
-            patients = patients.filter(
-                phone__icontains=phone
-            )
-
-        elif name:
-            patients = patients.filter(
-                first_name__icontains=name
-            ).union(
-                patients.filter(last_name__icontains=name)
-            )
+        else:
+            if patient_id:
+                patients = patients.filter(patient_id__iexact=patient_id)
+            if phone:
+                patients = patients.filter(phone__icontains=phone)
+            if name:
+                patients = patients.filter(
+                    Q(first_name__icontains=name) | Q(last_name__icontains=name)
+                )
 
         serializer = PatientSerializer(
             patients,

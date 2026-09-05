@@ -1,5 +1,4 @@
-# from django.core.exceptions import ValidationError as DjangoValidationError
-
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from .models import Patient
@@ -10,6 +9,10 @@ class PatientSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     age = serializers.SerializerMethodField()
     created_by_name = serializers.SerializerMethodField()
+    email = serializers.EmailField(required=False, allow_blank=True, allow_null=True)
+    next_visit_date = serializers.DateField(required=False, allow_null=True)
+    last_name = serializers.CharField(required=False, allow_blank=True, default="")
+    address = serializers.CharField(required=False, allow_blank=True, default="")
 
     class Meta:
         model = Patient

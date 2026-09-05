@@ -32,53 +32,37 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     ]
 
     def get_queryset(self):
-
         queryset = super().get_queryset()
 
-        appointment_date = self.request.query_params.get(
-            "appointment_date"
-        )
+        user = self.request.user
+        user_role = str(getattr(user, "role", "")).upper()
+        doctor_param = self.request.query_params.get("doctor")
 
-        doctor = self.request.query_params.get(
-            "doctor"
-        )
+        # Strictly scope appointments to logged-in doctor
+        if user.is_authenticated and user_role == CustomUser.Role.DOCTOR:
+            if hasattr(user, "staff_profile"):
+                queryset = queryset.filter(doctor=user.staff_profile)
+            else:
+                queryset = queryset.none()
+        elif doctor_param:
+            queryset = queryset.filter(doctor_id=doctor_param)
 
-        patient = self.request.query_params.get(
-            "patient"
-        )
-
-        status_param = self.request.query_params.get(
-            "status"
-        )
-
-        token_status = self.request.query_params.get(
-            "token_status"
-        )
+        appointment_date = self.request.query_params.get("appointment_date")
+        patient = self.request.query_params.get("patient")
+        status_param = self.request.query_params.get("status")
+        token_status = self.request.query_params.get("token_status")
 
         if appointment_date:
-            queryset = queryset.filter(
-                appointment_date=appointment_date
-            )
-
-        if doctor:
-            queryset = queryset.filter(
-                doctor_id=doctor
-            )
+            queryset = queryset.filter(appointment_date=appointment_date)
 
         if patient:
-            queryset = queryset.filter(
-                patient_id=patient
-            )
+            queryset = queryset.filter(patient_id=patient)
 
         if status_param:
-            queryset = queryset.filter(
-                status=status_param
-            )
+            queryset = queryset.filter(status=status_param)
 
         if token_status:
-            queryset = queryset.filter(
-                token_status=token_status
-            )
+            queryset = queryset.filter(token_status=token_status)
 
         return queryset
 
@@ -226,26 +210,27 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def check_in(self, request, pk=None):
         appointment = self.get_object()
 
-        # Only receptionist can check in patients
-        if request.user.role != CustomUser.Role.RECEPTIONIST:
+        # Only receptionist, admin, or staff can check in patients
+        role = str(getattr(request.user, "role", "")).upper()
+        if role not in [CustomUser.Role.RECEPTIONIST, CustomUser.Role.ADMIN] and not (
+            request.user.is_superuser or request.user.is_staff
+        ):
             return Response(
-                {"detail": "Only receptionist can check in patients."},
+                {"detail": "Only receptionist or admin can check in patients."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         today = date.today()
 
-        # Future appointments cannot be checked in
+        # Update appointment date to today if check-in is performed today
         if appointment.appointment_date != today:
-            return Response(
-                {"detail": "Patient can be checked in only on the appointment date."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            appointment.appointment_date = today
 
         # Appointment must be in a check-in eligible status
         if appointment.status not in [
             Appointment.Status.BOOKED,
             Appointment.Status.TOKEN_PENDING,
+            Appointment.Status.CHECKED_IN,
         ]:
             return Response(
                 {
@@ -257,43 +242,64 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Payment must be completed before check-in
+        # Get or automatically create OPD bill
+        from billing.models import Bill, BillingSettings
+
         bill = appointment.bills.filter(
-            bill_type="OPD"
+            bill_type=Bill.BillType.OPD
         ).first()
 
         if not bill:
-            return Response(
-                {"detail": "OPD bill has not been created for this appointment."},
-                status=status.HTTP_400_BAD_REQUEST,
+            patient = appointment.patient
+            registration_fee = 0
+            if patient.registered_at and patient.registered_at.date() == today:
+                settings = BillingSettings.objects.first()
+                if settings:
+                    registration_fee = settings.registration_fee
+
+            consultation_fee = getattr(appointment.doctor, "consultation_fee", 0) or 0
+
+            bill = Bill.objects.create(
+                patient=patient,
+                appointment=appointment,
+                bill_type=Bill.BillType.OPD,
+                registration_fee=registration_fee,
+                consultation_fee=consultation_fee,
+                pharmacy_fee=0,
+                lab_fee=0,
+                payment_method=Bill.PaymentMethod.CASH,
+                payment_status=Bill.PaymentStatus.PENDING,
             )
 
-        if bill.payment_status != "PAID":
-            return Response(
-                {
-                    "detail": "Payment must be completed before check-in.",
-                    "bill_number": bill.bill_number,
-                    "payment_status": bill.payment_status,
-                    "total_amount": str(bill.total_amount),
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+        # Process payment settlement if requested or not yet paid
+        payment_method = request.data.get("payment_method") or request.data.get("paymentMethod") or "CASH"
+        method_str = str(payment_method).upper()
+        if method_str not in [Bill.PaymentMethod.CASH, Bill.PaymentMethod.GPAY]:
+            method_str = Bill.PaymentMethod.CASH
+
+        if bill.payment_status != Bill.PaymentStatus.PAID:
+            bill.payment_method = method_str
+            bill.payment_status = Bill.PaymentStatus.PAID
+            bill.paid_at = timezone.now()
+            bill.save()
+
+        # Generate next token for this doctor today if not already issued
+        if not appointment.token_number or appointment.token_status != Appointment.TokenStatus.ISSUED:
+            last_token = (
+                Appointment.objects.filter(
+                    doctor=appointment.doctor,
+                    appointment_date=today,
+                    token_status=Appointment.TokenStatus.ISSUED,
+                )
+                .order_by("-token_number")
+                .first()
             )
 
-        # Generate next token for this doctor today
-        last_token = (
-            Appointment.objects.filter(
-                doctor=appointment.doctor,
-                appointment_date=today,
-                token_status=Appointment.TokenStatus.ISSUED,
-            )
-            .order_by("-token_number")
-            .first()
-        )
+            next_token = (last_token.token_number + 1) if last_token and last_token.token_number else 1
 
-        next_token = (last_token.token_number + 1) if last_token else 1
+            appointment.token_number = next_token
+            appointment.token_status = Appointment.TokenStatus.ISSUED
 
-        appointment.token_number = next_token
-        appointment.token_status = Appointment.TokenStatus.ISSUED
         appointment.status = Appointment.Status.CHECKED_IN
         appointment.save()
 
@@ -314,6 +320,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
                 "status": appointment.status,
                 "token_status": appointment.token_status,
                 "payment_status": bill.payment_status,
+                "bill_number": bill.bill_number,
             },
             status=status.HTTP_200_OK,
         )
@@ -326,53 +333,57 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     def doctor_queue(self, request):
 
         # ---------------------------------
-        # Only Doctor can access this queue
+        # Only Doctor, Admin, or Staff can access this queue
         # ---------------------------------
-
         if not IsDoctorRole().has_permission(request, self):
             return Response(
                 {
-                    "detail":
-                        "Only doctors can access the doctor queue."
+                    "detail": "Only doctors or administrators can access the doctor queue."
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
 
         # ---------------------------------
-        # Get logged-in doctor's profile
+        # Doctor's patient queue
         # ---------------------------------
+        doctor_profile = getattr(request.user, "staff_profile", None)
+        doctor_id = request.query_params.get("doctor")
 
-        try:
-            doctor_profile = request.user.staff_profile
+        queue = Appointment.objects.select_related(
+            "patient",
+            "doctor",
+            "doctor__user",
+            "booked_by",
+        ).all()
 
-        except Exception:
-            return Response(
-                {
-                    "detail":
-                        "Doctor staff profile not found."
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        # Strictly scope to doctor
+        user_role = str(getattr(request.user, "role", "")).upper()
+        if user_role == CustomUser.Role.DOCTOR:
+            if doctor_profile:
+                queue = queue.filter(doctor=doctor_profile)
+            else:
+                return Response([], status=status.HTTP_200_OK)
+        elif doctor_id and doctor_id != "ALL":
+            if str(doctor_id).isdigit():
+                queue = queue.filter(doctor_id=int(doctor_id))
+            else:
+                queue = queue.filter(doctor__staff_id=doctor_id)
+        elif doctor_profile:
+            queue = queue.filter(doctor=doctor_profile)
+        else:
+            return Response([], status=status.HTTP_200_OK)
 
-        appointment_date = request.query_params.get(
-            "appointment_date"
-        )
+        # Date filtering
+        appointment_date = request.query_params.get("appointment_date")
+        if appointment_date and appointment_date != "ALL":
+            queue = queue.filter(appointment_date=appointment_date)
 
-        if not appointment_date:
-            appointment_date = date.today()
+        # Status filtering
+        status_param = request.query_params.get("status")
+        if status_param and status_param != "ALL":
+            queue = queue.filter(status=status_param)
 
-        # ---------------------------------
-        # Only logged-in doctor's queue
-        # ---------------------------------
-
-        queue = self.get_queryset().filter(
-            doctor=doctor_profile,
-            appointment_date=appointment_date,
-            status=Appointment.Status.CHECKED_IN,
-            token_status=Appointment.TokenStatus.ISSUED,
-        ).order_by(
-            "token_number"
-        )
+        queue = queue.order_by("appointment_date", "token_number", "appointment_time")
 
         serializer = self.get_serializer(
             queue,
