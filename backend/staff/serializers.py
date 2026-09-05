@@ -19,6 +19,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class StaffProfileSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     email = serializers.CharField(source="user.email", read_only=True)
     role = serializers.CharField(source="user.role", read_only=True)

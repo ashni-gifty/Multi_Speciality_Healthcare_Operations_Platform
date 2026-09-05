@@ -4,7 +4,7 @@ import { money, value } from "./pharmacyHelpers";
 
 function SalesReports() {
   const [reportType, setReportType] = useState("daily");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [month, setMonth] = useState("");

@@ -63,6 +63,19 @@ class IsLabTechnicianRole(BasePermission):
         )
 
 
+class IsAdminOrLabTechnicianRole(BasePermission):
+    """Allows laboratory work only to Admins and Lab Technicians."""
+
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated
+            and request.user.role in [
+                CustomUser.Role.ADMIN,
+                CustomUser.Role.LAB_TECHNICIAN,
+            ]
+        )
+
+
 class IsPharmacistRole(BasePermission):
     """
     Allows access only to Pharmacist users.

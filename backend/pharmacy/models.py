@@ -1,5 +1,8 @@
 from datetime import date
 from django.db import models
+from django.conf import settings
+from patients.models import Patient
+from prescriptions.models import Prescription
 
 
 class Medicine(models.Model):
@@ -50,6 +53,11 @@ class Medicine(models.Model):
     )
 
     manufacturer = models.CharField(
+        max_length=150,
+        blank=True
+    )
+
+    supplier = models.CharField(
         max_length=150,
         blank=True
     )
@@ -117,3 +125,27 @@ class Medicine(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.batch_number}) - Stock: {self.quantity}"
+
+
+class PharmacyBill(models.Model):
+    serial_number = models.CharField(max_length=30, unique=True, blank=True)
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="pharmacy_bills")
+    prescription = models.ForeignKey(Prescription, on_delete=models.SET_NULL, null=True, blank=True, related_name="pharmacy_bills")
+    medicines = models.JSONField(default=list)
+    payment_mode = models.CharField(max_length=30, default="Cash")
+    grand_total = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    gst = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    amount_payable = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    paid_status = models.BooleanField(default=False)
+    issued_date = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="pharmacy_bills")
+
+    class Meta:
+        ordering = ["-issued_date"]
+
+    def save(self, *args, **kwargs):
+        if not self.serial_number:
+            last_bill = PharmacyBill.objects.order_by("-id").first()
+            next_id = (last_bill.id + 1) if last_bill else 1
+            self.serial_number = f"PHB-{next_id:06d}"
+        super().save(*args, **kwargs)
