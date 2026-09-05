@@ -217,7 +217,6 @@ const MedicineMaster = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Medicine Items</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{medicines.length}</h4>
-                <small className="text-muted">Unique SKUs in catalog</small>
               </div>
               <div className="p-3 bg-blue-subtle text-primary rounded-3">
                 <Pill size={22} />
@@ -232,7 +231,6 @@ const MedicineMaster = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Total Stock Units</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{totalStockUnits.toLocaleString()}</h4>
-                <small className="text-muted">Tablets, bottles, vials</small>
               </div>
               <div className="p-3 bg-emerald-subtle text-success rounded-3">
                 <Package size={22} />
@@ -247,7 +245,6 @@ const MedicineMaster = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Low Stock Alert</span>
                 <h4 className="fw-bold mt-1 mb-0 text-warning-emphasis">{lowStockCount}</h4>
-                <small className="text-muted">Below reorder threshold</small>
               </div>
               <div className="p-3 bg-amber-subtle text-warning-emphasis rounded-3">
                 <AlertTriangle size={22} />
@@ -262,7 +259,6 @@ const MedicineMaster = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Stock Valuation</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">₹{Math.round(totalValuation).toLocaleString()}</h4>
-                <small className="text-muted">Retail inventory value</small>
               </div>
               <div className="p-3 bg-purple-subtle text-purple rounded-3">
                 <Layers size={22} />
@@ -278,9 +274,6 @@ const MedicineMaster = () => {
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
               <h5 className="fw-bold mb-0 text-slate-900">Medicine Master & Inventory</h5>
-              <small className="text-muted">
-                Admin master catalog for drugs, pharmaceutical forms, batches, manufacturers, and prices
-              </small>
             </div>
             <div className="d-flex align-items-center gap-2">
               <button
@@ -318,7 +311,7 @@ const MedicineMaster = () => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search medicine name, generic formula, batch, SKU..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

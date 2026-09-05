@@ -119,7 +119,6 @@ const PatientHistory = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Total Patients</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{patients.length}</h4>
-                <small className="text-muted">Registered in database</small>
               </div>
               <div className="p-3 bg-blue-subtle text-primary rounded-3">
                 <Users size={22} />
@@ -136,7 +135,6 @@ const PatientHistory = () => {
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">
                   {patients.filter((p) => p.is_active !== false).length}
                 </h4>
-                <small className="text-muted">Eligible for consultations</small>
               </div>
               <div className="p-3 bg-emerald-subtle text-success rounded-3">
                 <Activity size={22} />
@@ -151,7 +149,6 @@ const PatientHistory = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Prescriptions</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{prescriptions.length}</h4>
-                <small className="text-muted">Pharmacy orders issued</small>
               </div>
               <div className="p-3 bg-amber-subtle text-warning-emphasis rounded-3">
                 <Pill size={22} />
@@ -166,7 +163,6 @@ const PatientHistory = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Lab Investigations</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{labReports.length}</h4>
-                <small className="text-muted">Diagnostic lab reports</small>
               </div>
               <div className="p-3 bg-purple-subtle text-purple rounded-3">
                 <FlaskConical size={22} />
@@ -181,10 +177,7 @@ const PatientHistory = () => {
         <div className="card-body p-4">
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
-              <h5 className="fw-bold mb-0 text-slate-900">Patient Electronic Medical Records (EMR)</h5>
-              <small className="text-muted">
-                Admin search, medical history, past consultations, prescriptions, lab reports, and billing
-              </small>
+              <h5 className="fw-bold mb-0 text-slate-900">Patient Electronic Medical Records</h5>
             </div>
             <button
               className="btn btn-outline-secondary btn-sm rounded-2 d-flex align-items-center gap-1"
@@ -213,7 +206,7 @@ const PatientHistory = () => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search patient by name, Patient ID, phone, email..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

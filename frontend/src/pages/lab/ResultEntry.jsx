@@ -114,9 +114,6 @@ const ResultEntry = ({ onResultEntered }) => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
           <div>
             <h5 className="fw-bold mb-0 text-slate-900">Diagnostic Analyzer Result Entry</h5>
-            <small className="text-muted">
-              Workflow: Processing in Lab → Result Entry & Range Validation → Ready for Approval
-            </small>
           </div>
           <button
             className="btn btn-outline-secondary btn-sm rounded-2 d-flex align-items-center gap-1"
@@ -146,7 +143,7 @@ const ResultEntry = ({ onResultEntered }) => {
             <input
               type="text"
               className="form-control border-start-0"
-              placeholder="Search by test name, patient, report ID..."
+              placeholder="Search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />

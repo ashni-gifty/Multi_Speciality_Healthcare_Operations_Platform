@@ -119,7 +119,6 @@ const DepartmentList = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Total Departments</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{departments.length}</h4>
-                <small className="text-muted">Clinical & Operational units</small>
               </div>
               <div className="p-3 bg-blue-subtle text-primary rounded-3">
                 <Building2 size={22} />
@@ -134,7 +133,6 @@ const DepartmentList = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Assigned Personnel</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{staffList.length}</h4>
-                <small className="text-muted">Doctors & Healthcare Staff</small>
               </div>
               <div className="p-3 bg-emerald-subtle text-success rounded-3">
                 <Users size={22} />
@@ -149,7 +147,6 @@ const DepartmentList = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Operational Status</span>
                 <h4 className="fw-bold mt-1 mb-0 text-success">100% Active</h4>
-                <small className="text-muted">All units functional</small>
               </div>
               <div className="p-3 bg-emerald-subtle text-success rounded-3">
                 <Activity size={22} />
@@ -165,22 +162,21 @@ const DepartmentList = () => {
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
               <h5 className="fw-bold mb-0 text-slate-900">Hospital Medical Departments</h5>
-              <small className="text-muted">Specialities, clinical divisions, and administrative services</small>
             </div>
+            <button
+              className="btn btn-outline-secondary btn-sm rounded-2 d-flex align-items-center gap-1 ms-auto"
+              onClick={loadData}
+              disabled={loading}
+            >
+              <RefreshCw size={14} className={loading ? "spin" : ""} />
+              <span>Refresh</span>
+            </button>
             <button
               className="btn btn-primary btn-sm rounded-2 d-flex align-items-center gap-1"
               onClick={openCreateForm}
             >
               <Plus size={14} />
               <span>Add Department</span>
-            </button>
-            <button
-              className="btn btn-outline-secondary btn-sm rounded-2 d-flex align-items-center gap-1"
-              onClick={loadData}
-              disabled={loading}
-            >
-              <RefreshCw size={14} className={loading ? "spin" : ""} />
-              <span>Refresh</span>
             </button>
           </div>
 
@@ -245,7 +241,7 @@ const DepartmentList = () => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search department name, code, description..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

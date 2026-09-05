@@ -128,7 +128,6 @@ const StaffList = () => {
               <div>
                 <span className="text-muted small fw-semibold text-uppercase">Total Personnel</span>
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">{staffList.length}</h4>
-                <small className="text-muted">All registered staff</small>
               </div>
               <div className="p-3 bg-blue-subtle text-primary rounded-3">
                 <Users size={22} />
@@ -145,7 +144,6 @@ const StaffList = () => {
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">
                   {staffList.filter((s) => s.role === "DOCTOR" && s.status === "ACTIVE").length}
                 </h4>
-                <small className="text-muted">Physicians & Specialists</small>
               </div>
               <div className="p-3 bg-emerald-subtle text-success rounded-3">
                 <Stethoscope size={22} />
@@ -162,7 +160,6 @@ const StaffList = () => {
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">
                   {staffList.filter((s) => s.role !== "DOCTOR" && s.status === "ACTIVE").length}
                 </h4>
-                <small className="text-muted">Desk, Lab, Pharmacy</small>
               </div>
               <div className="p-3 bg-amber-subtle text-warning-emphasis rounded-3">
                 <Building size={22} />
@@ -179,7 +176,6 @@ const StaffList = () => {
                 <h4 className="fw-bold mt-1 mb-0 text-slate-900">
                   {staffList.filter((s) => s.status === "INACTIVE").length}
                 </h4>
-                <small className="text-muted">Historical accounts</small>
               </div>
               <div className="p-3 bg-danger-subtle text-danger rounded-3">
                 <ShieldAlert size={22} />
@@ -196,9 +192,6 @@ const StaffList = () => {
           <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
             <div>
               <h5 className="fw-bold mb-0 text-slate-900">Healthcare Staff Directory</h5>
-              <small className="text-muted">
-                Admin view, role assignment, credential administration, and credential lifecycle
-              </small>
             </div>
             <div className="d-flex align-items-center gap-2">
               <button
@@ -240,7 +233,7 @@ const StaffList = () => {
                 <input
                   type="text"
                   className="form-control border-start-0"
-                  placeholder="Search by name, ID, phone, email, dept..."
+                  placeholder="Search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

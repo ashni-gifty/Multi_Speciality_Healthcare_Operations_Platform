@@ -18,11 +18,8 @@ class LabTestListCreateView(generics.ListCreateAPIView):
     serializer_class = LabTestSerializer
     permission_classes = [IsAdminOrLabTechnicianRole]
 
-
-class LabReportListCreateView(generics.ListCreateAPIView):
-    queryset = LabReport.objects.all().order_by("-created_at")
     serializer_class = LabReportSerializer
-    permission_classes = [IsAdminOrLabTechnicianRole]
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
         user = self.request.user

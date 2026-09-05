@@ -84,7 +84,14 @@ class LabReportSerializer(serializers.ModelSerializer):
         ]
 
     def get_patient_name(self, obj):
-        return f"{obj.patient.first_name} {obj.patient.last_name}"
+        patient = obj.patient
+
+        first_name = getattr(patient, "first_name", "") or ""
+        last_name = getattr(patient, "last_name", "") or ""
+
+        name = f"{first_name} {last_name}".strip()
+
+        return name or "Patient"
 
     def get_patient_details(self, obj):
         return (

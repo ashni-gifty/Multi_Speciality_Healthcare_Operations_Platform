@@ -52,7 +52,7 @@ const LabDashboard = () => {
     patient_id: "",
     test_name: "",
     sample_type: "Blood",
-    ordered_by_doctor: "Dr. Robert Smith",
+    ordered_by_doctor: "",
     priority: "ROUTINE",
     notes: "",
   });
@@ -67,31 +67,59 @@ const LabDashboard = () => {
 
   const loadData = async () => {
     setLoading(true);
+
     try {
       const [reportsData, testsData, patientsData] = await Promise.all([
         labService.getReports(),
         labService.getLabTests().catch(() => []),
         labService.getPatients().catch(() => []),
       ]);
+
       setReports(reportsData);
       setLabTests(testsData);
       setPatients(patientsData);
+
       if (patientsData.length > 0 && !orderForm.patient_id) {
-        setOrderForm((prev) => ({ ...prev, patient_id: patientsData[0].patient_id }));
+        setOrderForm((prev) => ({
+          ...prev,
+          patient_id: patientsData[0].patient_id,
+        }));
       }
+
       if (testsData.length > 0 && !orderForm.test_name) {
-        setOrderForm((prev) => ({ ...prev, test_name: testsData[0].test_name, sample_type: testsData[0].sample_type }));
+        setOrderForm((prev) => ({
+          ...prev,
+          test_name: testsData[0].test_name,
+          sample_type: testsData[0].sample_type,
+        }));
       }
     } catch (err) {
       console.error("Error loading lab data:", err);
-      showAlert("danger", "Failed to connect to Laboratory Medicine service.");
+
+      showAlert(
+        "danger",
+        "Failed to connect to Laboratory Medicine service."
+      );
     } finally {
       setLoading(false);
     }
   };
+  
 
+  const [doctors, setDoctors] = useState([]); 
   useEffect(() => {
+    const loadDoctors = async () => {
+    try {
+      const data = await labService.getDoctors();
+      console.log("Doctors loaded:", data);
+      setDoctors(data);
+    } catch (error) {
+      console.error("Failed to load doctors:", error);
+    }
+  };
+
     loadData();
+    loadDoctors();
   }, []);
 
   const handleCreateOrder = async (e) => {
@@ -329,12 +357,11 @@ const LabDashboard = () => {
               {/* 4 Diagnostic Metrics */}
               <div className="row g-3">
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-primary">
+                  <div className="card border-0 shadow-xs rounded-3 bg-primary p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">Total Requisitions</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-slate-900">{reports.length}</h3>
-                        <small className="text-muted">Doctor diagnostic orders</small>
+                        <span className="text-white small fw-semibold text-uppercase">Total Requisitions</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">{reports.length}</h3>
                       </div>
                       <div className="p-3 bg-blue-subtle text-primary rounded-3">
                         <FlaskConical size={24} />
@@ -344,14 +371,13 @@ const LabDashboard = () => {
                 </div>
 
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-warning">
+                  <div className="card border-0 shadow-xs rounded-3 bg-warning p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">Pending Phlebotomy</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-warning-emphasis">{pendingSamplesCount}</h3>
-                        <small className="text-muted">Specimens to draw</small>
+                        <span className="text-white small fw-semibold text-uppercase">Pending Phlebotomy</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">{pendingSamplesCount}</h3>
                       </div>
-                      <div className="p-3 bg-amber-subtle text-warning-emphasis rounded-3">
+                      <div className="p-3 bg-amber-subtle text-warning rounded-3">
                         <Clock size={24} />
                       </div>
                     </div>
@@ -359,14 +385,13 @@ const LabDashboard = () => {
                 </div>
 
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-info">
+                  <div className="card border-0 shadow-xs rounded-3 bg-info p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">In Processing</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-info-emphasis">{inProcessingCount}</h3>
-                        <small className="text-muted">Analyzers active</small>
+                        <span className="text-white small fw-semibold text-uppercase">In Processing</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">{inProcessingCount}</h3>
                       </div>
-                      <div className="p-3 bg-info-subtle text-info-emphasis rounded-3">
+                      <div className="p-3 bg-info-subtle text-info rounded-3">
                         <Activity size={24} />
                       </div>
                     </div>
@@ -374,12 +399,11 @@ const LabDashboard = () => {
                 </div>
 
                 <div className="col-sm-6 col-lg-3">
-                  <div className="card border-0 shadow-xs rounded-3 bg-white p-3 border-start border-4 border-success">
+                  <div className="card border-0 shadow-xs rounded-3 bg-success p-3">
                     <div className="d-flex justify-content-between align-items-center">
                       <div>
-                        <span className="text-muted small fw-semibold text-uppercase">Completed & Verified</span>
-                        <h3 className="fw-bold mt-1 mb-0 text-success">{completedReportsCount}</h3>
-                        <small className="text-muted">Transmitted to Doctors</small>
+                        <span className="text-white small fw-semibold text-uppercase">Completed & Verified</span>
+                        <h3 className="fw-bold mt-1 mb-0 text-white">{completedReportsCount}</h3>
                       </div>
                       <div className="p-3 bg-emerald-subtle text-success rounded-3">
                         <CheckCircle2 size={24} />
@@ -394,7 +418,6 @@ const LabDashboard = () => {
                 <div className="card-header bg-white border-0 py-3 px-4 d-flex justify-content-between align-items-center">
                   <div>
                     <h6 className="fw-bold mb-0 text-slate-900">Recent Diagnostic Test Orders</h6>
-                    <small className="text-muted">Live patient requisitions</small>
                   </div>
                   <button className="btn btn-outline-primary btn-sm rounded-2 px-3 fw-medium" onClick={() => setActiveTab("results")}>
                     Enter Results
@@ -556,15 +579,36 @@ const LabDashboard = () => {
                     </div>
 
                     <div className="col-md-4">
-                      <label className="form-label small fw-semibold text-slate-700 mb-1">Ordering Doctor *</label>
-                      <input
-                        type="text"
+                      <label className="form-label small fw-semibold text-slate-700 mb-1">
+                        Ordering Doctor *
+                      </label>
+
+                      <select
                         required
-                        placeholder="e.g. Dr. Robert Smith"
-                        className="form-control form-control-sm"
+                        className="form-select form-select-sm"
                         value={orderForm.ordered_by_doctor}
-                        onChange={(e) => setOrderForm({ ...orderForm, ordered_by_doctor: e.target.value })}
-                      />
+                        onChange={(e) =>
+                          setOrderForm({
+                            ...orderForm,
+                            ordered_by_doctor: e.target.value,
+                          })
+                        }
+                      >
+                        <option value="">Select ordering doctor</option>
+
+                        {doctors.map((doctor) => (
+                          <option
+                            key={doctor.id}
+                            value={doctor.first_name && doctor.last_name
+                              ? `Dr. ${doctor.first_name} ${doctor.last_name}`
+                              : doctor.username}
+                          >
+                            {doctor.first_name && doctor.last_name
+                              ? `Dr. ${doctor.first_name} ${doctor.last_name}`
+                              : doctor.username}
+                          </option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="col-md-4">
