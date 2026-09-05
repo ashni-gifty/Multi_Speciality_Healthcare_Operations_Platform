@@ -362,3 +362,26 @@ class DoctorAvailabilityListCreateView(APIView):
             DoctorAvailabilitySerializer(availability).data,
             status=status.HTTP_201_CREATED
         )
+
+class DoctorListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        doctors = (
+            StaffProfile.objects
+            .select_related("user", "department")
+            .filter(
+                user__role=CustomUser.Role.DOCTOR,
+                status=StaffProfile.Status.ACTIVE,
+                user__is_active=True,
+            )
+            .order_by("staff_id")
+        )
+
+        serializer = StaffProfileSerializer(
+            doctors,
+            many=True
+        )
+
+        return Response(serializer.data)
+    

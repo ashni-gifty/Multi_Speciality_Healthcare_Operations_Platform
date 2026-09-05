@@ -1,9 +1,7 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 
 from accounts.permissions import (
     IsAdminOrLabTechnicianRole,
-    IsLabTechnicianRole,
 )
 
 from .models import LabTest, LabReport
@@ -18,8 +16,12 @@ class LabTestListCreateView(generics.ListCreateAPIView):
     serializer_class = LabTestSerializer
     permission_classes = [IsAdminOrLabTechnicianRole]
 
+
+class LabReportListCreateView(generics.ListCreateAPIView):
+    queryset = LabReport.objects.all().order_by("-created_at")
+
     serializer_class = LabReportSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrLabTechnicianRole]
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -38,5 +40,6 @@ class LabTestListCreateView(generics.ListCreateAPIView):
 
 class LabReportDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = LabReport.objects.all()
+
     serializer_class = LabReportSerializer
     permission_classes = [IsAdminOrLabTechnicianRole]

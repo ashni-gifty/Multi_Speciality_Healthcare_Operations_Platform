@@ -1,20 +1,28 @@
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 
-from .views import LabReportViewSet, LabTestViewSet
-
-
-router = DefaultRouter()
-
-router.register(
-    r"reports",
-    LabReportViewSet,
-    basename="laboratory-report"
+from .views import (
+    LabTestListCreateView,
+    LabReportListCreateView,
+    LabReportDetailView,
 )
 
-router.register(
-    r"tests",
-    LabTestViewSet,
-    basename="laboratory-test"
-)
 
-urlpatterns = router.urls
+urlpatterns = [
+    path(
+        "tests/",
+        LabTestListCreateView.as_view(),
+        name="lab-test-list-create",
+    ),
+
+    path(
+        "reports/",
+        LabReportListCreateView.as_view(),
+        name="lab-report-list-create",
+    ),
+
+    path(
+        "reports/<int:pk>/",
+        LabReportDetailView.as_view(),
+        name="lab-report-detail",
+    ),
+]

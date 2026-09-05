@@ -2,51 +2,92 @@ import React, { createContext, useContext, useState } from "react";
 import axios from "axios";
 
 const AuthContext = createContext(null);
-const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
+
+const API_URL =
+  import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const token = localStorage.getItem("access_token");
     const savedUser = localStorage.getItem("user");
-    if (!token || !savedUser) {
-      localStorage.removeItem("user");
-      localStorage.removeItem("access_token");
-      return null;
-    }
+
     try {
-      return JSON.parse(savedUser);
+      return savedUser ? JSON.parse(savedUser) : null;
     } catch {
       return null;
     }
   });
 
-  const login = async (usernameOrEmail, password) => {
+  const [loading, setLoading] = useState(false);
+
+  const login = async (username, password) => {
+    setLoading(true);
+
     try {
       const response = await axios.post(`${API_URL}/login/`, {
-        username_or_email: usernameOrEmail,
+        username,
         password,
       });
-      const data = response.data;
-      const authToken = data.token || data.access;
-      if (authToken) localStorage.setItem("access_token", authToken);
-      if (data.refresh) localStorage.setItem("refresh_token", data.refresh);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
-      return data;
-    } catch (err) {
-      const msg = err.response?.data?.non_field_errors?.[0] || err.response?.data?.detail || err.response?.data?.username_or_email?.[0] || err.response?.data?.password?.[0] || err.message || "Unable to connect to healthcare server. Please verify credentials.";
-      throw new Error(msg);
+
+      console.log("LOGIN RESPONSE:", response.data);
+
+      const { access, refresh, user } = response.data;
+
+      if (access) {
+        localStorage.setItem("access", access);
+      }
+
+      if (refresh) {
+        localStorage.setItem("refresh", refresh);
+      }
+
+      if (user) {
+        localStorage.setItem("user", JSON.stringify(user));
+        setUser(user);
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error("LOGIN API ERROR:", error.response?.data);
+
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("access");
+    localStorage.removeItem("refresh");
     localStorage.removeItem("user");
+
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// IMPORTANT: Login.jsx uses this
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error(
+      "useAuth must be used inside an AuthProvider"
+    );
+  }
+
+  return context;
+};
+
+export default AuthContext;
