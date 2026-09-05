@@ -6,6 +6,15 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import Receptionist from "./pages/receptionist/Receptionist";
 import Doctor from "./pages/Doctor";
 import LabDashboard from "./pages/lab/LabDashboard";
+import PharmacyDashboard from "./pages/pharmacist/PharmacyDashboard";
+import MedicineStock from "./pages/pharmacist/MedicineStock";
+import PrescriptionList from "./pages/pharmacist/PrescriptionList";
+import PrescriptionDetails from "./pages/pharmacist/PrescriptionDetails";
+import DispenseMedicine from "./pages/pharmacist/DispenseMedicine";
+import PharmacyBill from "./pages/pharmacist/PharmacyBill";
+import PharmacyBillPrint from "./pages/pharmacist/PharmacyBillPrint";
+import SalesReports from "./pages/pharmacist/SalesReports";
+import PharmacistLayout from "./pages/pharmacist/PharmacistLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const RootRedirect = () => {
@@ -49,6 +58,17 @@ function App() {
         <Route path="/receptionist" element={<ProtectedRoute allowedRoles={["RECEPTIONIST"]}><Receptionist /> </ProtectedRoute>}/>
         <Route path="/lab-technician" element={<ProtectedRoute allowedRoles={["LAB_TECHNICIAN", "LAB"]}><LabDashboard /></ProtectedRoute>} />
         <Route path="/lab" element={<ProtectedRoute allowedRoles={["LAB_TECHNICIAN", "LAB"]}><LabDashboard /></ProtectedRoute>} />
+        <Route element={<ProtectedRoute allowedRoles={["PHARMACIST"]}><PharmacistLayout /></ProtectedRoute>}>
+          <Route path="/pharmacist" element={<PharmacyDashboard />} />
+          <Route path="/pharmacist/dashboard" element={<PharmacyDashboard />} />
+          <Route path="/pharmacist/medicines" element={<MedicineStock />} />
+          <Route path="/pharmacist/prescriptions" element={<PrescriptionList />} />
+          <Route path="/pharmacist/prescriptions/:id" element={<PrescriptionDetails />} />
+          <Route path="/pharmacist/dispense/:id" element={<DispenseMedicine />} />
+          <Route path="/pharmacist/bills/:id" element={<PharmacyBill />} />
+          <Route path="/pharmacist/bills/:id/print" element={<PharmacyBillPrint />} />
+          <Route path="/pharmacist/reports" element={<SalesReports />} />
+        </Route>
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

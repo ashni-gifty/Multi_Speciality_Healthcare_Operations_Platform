@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+<<<<<<< HEAD
     MedicineListCreateView,
     MedicineDetailView,
     MedicineStockListCreateView,
@@ -9,10 +10,18 @@ from .views import (
     PharmacyBillDetailView,
     PayPharmacyBillView,
     PharmacySalesReportView,
+=======
+    DispenseMedicineView,
+    MedicineDetailView,
+    MedicineListCreateView,
+    PharmacyBillDetailView,
+    PharmacyBillListCreateView,
+>>>>>>> origin/feature/pharmacist
 )
 
 
 urlpatterns = [
+<<<<<<< HEAD
 
     # Medicine Master
     path(
@@ -67,3 +76,11 @@ urlpatterns = [
         name="pharmacy-sales-report"
     ),
 ]
+=======
+    path("medicines/", MedicineListCreateView.as_view(), name="medicine-list-create"),
+    path("medicines/<int:pk>/", MedicineDetailView.as_view(), name="medicine-detail"),
+    path("dispense/", DispenseMedicineView.as_view(), name="dispense-medicine"),
+    path("pharmacy-bills/", PharmacyBillListCreateView.as_view(), name="pharmacy-bill-list-create"),
+    path("pharmacy-bills/<int:pk>/", PharmacyBillDetailView.as_view(), name="pharmacy-bill-detail"),
+]
+>>>>>>> origin/feature/pharmacist

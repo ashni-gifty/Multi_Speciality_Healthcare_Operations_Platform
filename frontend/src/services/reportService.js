@@ -1,5 +1,55 @@
 import api from "./api";
 
+const asList = (data) => (Array.isArray(data) ? data : data?.results || []);
+
+const prescriptionDate = (prescription) => String(prescription.created_at || prescription.date || "").slice(0, 10);
+
+const parseMedicineLine = (line) => {
+  const text = String(line || "").trim();
+  const quantityMatch = text.match(/(?:x|qty|quantity)\s*[:=-]?\s*(\d+)|^(\d+)\s*x?\s+/i);
+  const quantity = Number(quantityMatch?.[1] || quantityMatch?.[2] || 1);
+  const name = text
+    .replace(/(?:x|qty|quantity)\s*[:=-]?\s*\d+/i, "")
+    .replace(/^\d+\s*x?\s+/i, "")
+    .split(/[-,(]/)[0]
+    .trim();
+  return { name, quantity: Number.isFinite(quantity) ? quantity : 1 };
+};
+
+const buildSalesReport = (prescriptions, medicines, from, to) => {
+  const inventory = medicines.map((medicine) => ({
+    ...medicine,
+    normalizedName: String(medicine.name || medicine.medicine_name || "").toLowerCase(),
+  }));
+  const matchingPrescriptions = prescriptions.filter((prescription) => {
+    const date = prescriptionDate(prescription);
+    return (!from || date >= from) && (!to || date <= to);
+  });
+  const details = [];
+
+  matchingPrescriptions.forEach((prescription) => {
+    const lines = String(prescription.medicines || "").split(/\n|,(?=\s*[A-Za-z])/).filter(Boolean);
+    lines.forEach((line) => {
+      const parsed = parseMedicineLine(line);
+      const medicine = inventory.find((item) => parsed.name && item.normalizedName.includes(parsed.name.toLowerCase()));
+      const unitPrice = Number(medicine?.unit_price || 0);
+      details.push({
+        date: prescriptionDate(prescription),
+        medicine_name: parsed.name || "Prescribed medicine",
+        quantity: parsed.quantity,
+        total: parsed.quantity * unitPrice,
+      });
+    });
+  });
+
+  return {
+    total_sales: details.reduce((total, item) => total + item.total, 0),
+    total_bills: matchingPrescriptions.length,
+    medicines_sold: details.reduce((total, item) => total + item.quantity, 0),
+    details,
+  };
+};
+
 export const reportService = {
   // Get primary admin dashboard statistics
   getDashboardData: async () => {
@@ -56,6 +106,32 @@ export const reportService = {
     } catch {
       return [];
     }
+  },
+
+  getDailyReport: async (date) => {
+    const [prescriptionsResponse, medicinesResponse] = await Promise.all([
+      api.get("/prescriptions/"),
+      api.get("/medicines/"),
+    ]);
+    return buildSalesReport(asList(prescriptionsResponse.data), asList(medicinesResponse.data), date, date);
+  },
+
+  getWeeklyReport: async (startDate, endDate) => {
+    const [prescriptionsResponse, medicinesResponse] = await Promise.all([
+      api.get("/prescriptions/"),
+      api.get("/medicines/"),
+    ]);
+    return buildSalesReport(asList(prescriptionsResponse.data), asList(medicinesResponse.data), startDate, endDate);
+  },
+
+  getMonthlyReport: async (month) => {
+    const [prescriptionsResponse, medicinesResponse] = await Promise.all([
+      api.get("/prescriptions/"),
+      api.get("/medicines/"),
+    ]);
+    const monthStart = `${month}-01`;
+    const monthEnd = `${month}-31`;
+    return buildSalesReport(asList(prescriptionsResponse.data), asList(medicinesResponse.data), monthStart, monthEnd);
   },
 
   // Get staff list
