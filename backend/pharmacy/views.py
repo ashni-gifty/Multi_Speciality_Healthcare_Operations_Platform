@@ -1,3 +1,7 @@
+from decimal import Decimal
+from datetime import date
+
+from django.db import transaction
 from django.db.models import Q
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -5,143 +9,568 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.models import CustomUser
-from .models import Medicine
-from .serializers import MedicineSerializer
+from prescriptions.models import Prescription
 
+from .models import (
+    Medicine,
+    MedicineStock,
+    PharmacyBill,
+    PharmacyBillItem,
+)
 
-class IsAdminOrPharmacist(APIView):
-    """
-    Permission check for Admin and Pharmacist roles.
-    """
-    def check_permissions(self, request):
-        super().check_permissions(request)
-        if not (request.user.is_authenticated and request.user.role in [CustomUser.Role.ADMIN, CustomUser.Role.PHARMACIST]):
-            self.permission_denied(request, message="Only Admin and Pharmacist can access medicine inventory.")
+from .serializers import (
+    MedicineSerializer,
+    MedicineStockSerializer,
+    PharmacyBillSerializer,
+)
 
 
 class MedicineListCreateView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        medicines = Medicine.objects.filter(status=Medicine.Status.ACTIVE)
 
-        search = request.query_params.get("search", "").strip()
+        medicines = (
+            Medicine.objects
+            .filter(is_active=True)
+            .prefetch_related("stocks")
+        )
+
+        search = request.query_params.get("search")
+
         if search:
             medicines = medicines.filter(
-                Q(name__icontains=search) |
-                Q(generic_name__icontains=search) |
-                Q(batch_number__icontains=search) |
-                Q(medicine_id__icontains=search) |
-                Q(manufacturer__icontains=search) |
-                Q(supplier__icontains=search)
+                Q(name__icontains=search)
+                | Q(generic_name__icontains=search)
+                | Q(medicine_id__icontains=search)
+                | Q(manufacturer__icontains=search)
+                | Q(supplier__icontains=search)
             )
 
-        category = request.query_params.get("category", "").strip()
-        if category and category != "ALL":
-            medicines = medicines.filter(category__iexact=category)
+        category = request.query_params.get("category")
 
-        stock_status = request.query_params.get("stock_status", "").strip()
-        if stock_status == "LOW_STOCK":
-            medicines = [m for m in medicines if m.stock_status == "LOW_STOCK"]
-            serializer = MedicineSerializer(medicines, many=True)
-            return Response(serializer.data)
+        if category:
+            medicines = medicines.filter(
+                category=category
+            )
 
-        serializer = MedicineSerializer(medicines, many=True)
-        return Response(serializer.data)
+        serializer = MedicineSerializer(
+            medicines,
+            many=True
+        )
+
+        data = serializer.data
+
+        stock_status = request.query_params.get(
+            "stock_status"
+        )
+
+        if stock_status:
+            data = [
+                medicine
+                for medicine in data
+                if medicine["stock_status"] == stock_status
+            ]
+
+        return Response(data)
 
     def post(self, request):
-        if request.user.role not in [CustomUser.Role.ADMIN, CustomUser.Role.PHARMACIST]:
+
+        if request.user.role not in [
+            CustomUser.Role.ADMIN,
+            CustomUser.Role.PHARMACIST,
+        ]:
             return Response(
-                {"detail": "Only Admin and Pharmacist can add medicines."},
+                {"detail": "Only admin or pharmacist can create medicines."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = MedicineSerializer(data=request.data)
-        if serializer.is_valid():
-            medicine = serializer.save()
-            return Response(
-                MedicineSerializer(medicine).data,
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = MedicineSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        medicine = serializer.save()
+
+        return Response(
+            MedicineSerializer(medicine).data,
+            status=status.HTTP_201_CREATED
+        )
 
 
 class MedicineDetailView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
-        try:
-            return Medicine.objects.get(pk=pk)
-        except Medicine.DoesNotExist:
-            return None
+
+        return (
+            Medicine.objects
+            .prefetch_related("stocks")
+            .get(pk=pk)
+        )
 
     def get(self, request, pk):
-        medicine = self.get_object(pk)
-        if not medicine:
+
+        try:
+            medicine = self.get_object(pk)
+        except Medicine.DoesNotExist:
             return Response(
                 {"detail": "Medicine not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
-        serializer = MedicineSerializer(medicine)
-        return Response(serializer.data)
+
+        return Response(
+            MedicineSerializer(medicine).data
+        )
 
     def put(self, request, pk):
-        if request.user.role not in [CustomUser.Role.ADMIN, CustomUser.Role.PHARMACIST]:
-            return Response(
-                {"detail": "Only Admin and Pharmacist can modify medicines."},
-                status=status.HTTP_403_FORBIDDEN
-            )
 
-        medicine = self.get_object(pk)
-        if not medicine:
-            return Response(
-                {"detail": "Medicine not found."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = MedicineSerializer(medicine, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return self.update(request, pk)
 
     def patch(self, request, pk):
-        if request.user.role not in [CustomUser.Role.ADMIN, CustomUser.Role.PHARMACIST]:
+
+        return self.update(request, pk, partial=True)
+
+    def update(self, request, pk, partial=False):
+
+        if request.user.role not in [
+            CustomUser.Role.ADMIN,
+            CustomUser.Role.PHARMACIST,
+        ]:
             return Response(
-                {"detail": "Only Admin and Pharmacist can modify medicines."},
+                {"detail": "Only admin or pharmacist can update medicines."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        medicine = self.get_object(pk)
-        if not medicine:
+        try:
+            medicine = self.get_object(pk)
+        except Medicine.DoesNotExist:
             return Response(
                 {"detail": "Medicine not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        serializer = MedicineSerializer(medicine, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer = MedicineSerializer(
+            medicine,
+            data=request.data,
+            partial=partial
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        medicine = serializer.save()
+
+        return Response(
+            MedicineSerializer(medicine).data
+        )
 
     def delete(self, request, pk):
+
         if request.user.role != CustomUser.Role.ADMIN:
             return Response(
-                {"detail": "Only Admin can delete medicines from inventory."},
+                {"detail": "Only admin can discontinue medicines."},
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        medicine = self.get_object(pk)
-        if not medicine:
+        try:
+            medicine = Medicine.objects.get(pk=pk)
+        except Medicine.DoesNotExist:
             return Response(
                 {"detail": "Medicine not found."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        medicine.status = Medicine.Status.DISCONTINUED
-        medicine.save(update_fields=["status", "updated_at"])
+        medicine.is_active = False
+        medicine.save(update_fields=["is_active"])
+
         return Response(
-            {"message": "Medicine deactivated successfully. Historical records are preserved."},
-            status=status.HTTP_200_OK
+            {"detail": "Medicine discontinued successfully."}
+        )
+
+
+class MedicineStockListCreateView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        stocks = MedicineStock.objects.select_related(
+            "medicine"
+        )
+
+        medicine_id = request.query_params.get(
+            "medicine_id"
+        )
+
+        if medicine_id:
+            stocks = stocks.filter(
+                medicine__medicine_id=medicine_id
+            )
+
+        serializer = MedicineStockSerializer(
+            stocks,
+            many=True
+        )
+
+        data = serializer.data
+
+        stock_status = request.query_params.get(
+            "stock_status"
+        )
+
+        if stock_status:
+            data = [
+                stock
+                for stock in data
+                if stock["stock_status"] == stock_status
+            ]
+
+        return Response(data)
+
+    def post(self, request):
+
+        if request.user.role not in [
+            CustomUser.Role.ADMIN,
+            CustomUser.Role.PHARMACIST,
+        ]:
+            return Response(
+                {"detail": "Only admin or pharmacist can add stock."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = MedicineStockSerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        stock = serializer.save()
+
+        return Response(
+            MedicineStockSerializer(stock).data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class DispensePrescriptionView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    GST_RATE = Decimal("0.05")
+
+    @transaction.atomic
+    def post(self, request, prescription_id):
+
+        if request.user.role != CustomUser.Role.PHARMACIST:
+            return Response(
+                {"detail": "Only pharmacist can dispense medicines."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            prescription = (
+                Prescription.objects
+                .prefetch_related("prescription_medicines__medicine")
+                .get(pk=prescription_id)
+            )
+        except Prescription.DoesNotExist:
+            return Response(
+                {"detail": "Prescription not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if PharmacyBill.objects.filter(
+            prescription_id=prescription.id
+        ).exists():
+            return Response(
+                {"detail": "This prescription has already been dispensed."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        prescribed_items = prescription.prescription_medicines.all()
+
+        if not prescribed_items.exists():
+            return Response(
+                {"detail": "No medicines found in this prescription."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        bill = PharmacyBill.objects.create(
+            prescription_id=prescription.id,
+            patient=prescription.patient,
+        )
+
+        subtotal = Decimal("0.00")
+
+        today = date.today()
+
+        try:
+
+            for prescribed in prescribed_items:
+
+                required_quantity = prescribed.quantity
+
+                if required_quantity <= 0:
+                    raise ValueError(
+                        f"Invalid quantity for {prescribed.medicine.name}."
+                    )
+
+                stocks = list(
+                    MedicineStock.objects
+                    .select_for_update()
+                    .filter(
+                        medicine=prescribed.medicine,
+                        expiry_date__gte=today,
+                        units__gt=0,
+                    )
+                    .order_by("expiry_date", "id")
+                )
+
+                available = sum(
+                    stock.units
+                    for stock in stocks
+                )
+
+                if available < required_quantity:
+                    raise ValueError(
+                        f"Insufficient stock for {prescribed.medicine.name}. "
+                        f"Available: {available}, Required: {required_quantity}."
+                    )
+
+                remaining = required_quantity
+
+                for stock in stocks:
+
+                    if remaining <= 0:
+                        break
+
+                    take = min(
+                        stock.units,
+                        remaining
+                    )
+
+                    amount = (
+                        stock.price_per_unit
+                        * Decimal(take)
+                    )
+
+                    PharmacyBillItem.objects.create(
+                        bill=bill,
+                        medicine=prescribed.medicine,
+                        stock=stock,
+                        quantity=take,
+                        price_per_unit=stock.price_per_unit,
+                        amount=amount,
+                    )
+
+                    stock.units -= take
+                    stock.save(update_fields=["units", "updated_at"])
+
+                    subtotal += amount
+                    remaining -= take
+
+        except ValueError as exc:
+
+            transaction.set_rollback(True)
+
+            return Response(
+                {"detail": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        gst = subtotal * self.GST_RATE
+        total = subtotal + gst
+
+        bill.subtotal = subtotal
+        bill.gst = gst
+        bill.total_amount = total
+        bill.payment_method = request.data.get(
+            "payment_method",
+            PharmacyBill.PaymentMethod.CASH
+        )
+
+        bill.save()
+
+        return Response(
+            PharmacyBillSerializer(bill).data,
+            status=status.HTTP_201_CREATED
+        )
+
+
+class PharmacyBillListView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        bills = (
+            PharmacyBill.objects
+            .select_related("patient")
+            .prefetch_related("items__medicine", "items__stock")
+            .order_by("-created_at")
+        )
+
+        patient_id = request.query_params.get("patient_id")
+
+        if patient_id:
+            bills = bills.filter(
+                patient_id=patient_id
+            )
+
+        paid = request.query_params.get("paid")
+
+        if paid in ["true", "false"]:
+            bills = bills.filter(
+                paid=(paid == "true")
+            )
+
+        return Response(
+            PharmacyBillSerializer(
+                bills,
+                many=True
+            ).data
+        )
+
+
+class PharmacyBillDetailView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+
+        try:
+            bill = (
+                PharmacyBill.objects
+                .select_related("patient")
+                .prefetch_related(
+                    "items__medicine",
+                    "items__stock"
+                )
+                .get(pk=pk)
+            )
+        except PharmacyBill.DoesNotExist:
+            return Response(
+                {"detail": "Pharmacy bill not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        return Response(
+            PharmacyBillSerializer(bill).data
+        )
+
+
+class PayPharmacyBillView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+
+        if request.user.role != CustomUser.Role.PHARMACIST:
+            return Response(
+                {"detail": "Only pharmacist can process pharmacy payment."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            bill = PharmacyBill.objects.get(pk=pk)
+        except PharmacyBill.DoesNotExist:
+            return Response(
+                {"detail": "Pharmacy bill not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if bill.paid:
+            return Response(
+                {"detail": "This pharmacy bill is already paid."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        payment_method = request.data.get(
+            "payment_method"
+        )
+
+        if payment_method not in [
+            PharmacyBill.PaymentMethod.CASH,
+            PharmacyBill.PaymentMethod.GPAY,
+        ]:
+            return Response(
+                {"detail": "Payment method must be CASH or GPAY."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        bill.payment_method = payment_method
+        bill.paid = True
+        bill.save(
+            update_fields=[
+                "payment_method",
+                "paid",
+            ]
+        )
+
+        return Response(
+            PharmacyBillSerializer(bill).data
+        )
+
+
+class PharmacySalesReportView(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+
+        from django.db.models import Sum
+
+        period = request.query_params.get(
+            "period",
+            "daily"
+        )
+
+        from django.utils import timezone
+
+        today = timezone.localdate()
+
+        if period == "daily":
+            start_date = today
+
+        elif period == "weekly":
+            start_date = today - __import__("datetime").timedelta(
+                days=6
+            )
+
+        elif period == "monthly":
+            start_date = today.replace(day=1)
+
+        else:
+            return Response(
+                {
+                    "detail": (
+                        "Period must be daily, weekly, or monthly."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        bills = PharmacyBill.objects.filter(
+            paid=True,
+            created_at__date__gte=start_date,
+            created_at__date__lte=today,
+        )
+
+        total_sales = bills.aggregate(
+            total=Sum("total_amount")
+        )["total"] or Decimal("0.00")
+
+        total_bills = bills.count()
+
+        return Response(
+            {
+                "period": period,
+                "start_date": start_date,
+                "end_date": today,
+                "total_bills": total_bills,
+                "total_sales": total_sales,
+            }
         )

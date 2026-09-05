@@ -6,6 +6,7 @@ from .views import (
     DepartmentListCreateView,
     StaffDetailView,
     StaffListCreateView,
+    DoctorAvailabilityListCreateView,
 )
 
 
@@ -40,5 +41,10 @@ urlpatterns = [
         "staff/<str:staff_id>/",
         StaffDetailView.as_view(),
         name="staff-detail"
+    ),
+    path(
+        "doctor-availability/",
+        DoctorAvailabilityListCreateView.as_view(),
+        name="doctor-availability",
     ),
 ]

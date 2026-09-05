@@ -246,3 +246,88 @@ class StaffProfile(models.Model):
 
     def __str__(self):
         return f"{self.staff_id} -Dr. {self.first_name} {self.last_name}"
+
+# -----------------------------
+# Doctor Availability
+# -----------------------------
+
+class DoctorAvailability(models.Model):
+
+    class DayOfWeek(models.TextChoices):
+        MONDAY = "MONDAY", "Monday"
+        TUESDAY = "TUESDAY", "Tuesday"
+        WEDNESDAY = "WEDNESDAY", "Wednesday"
+        THURSDAY = "THURSDAY", "Thursday"
+        FRIDAY = "FRIDAY", "Friday"
+        SATURDAY = "SATURDAY", "Saturday"
+        SUNDAY = "SUNDAY", "Sunday"
+
+    doctor = models.ForeignKey(
+        StaffProfile,
+        on_delete=models.CASCADE,
+        related_name="availability",
+        limit_choices_to={"user__role": "DOCTOR"},
+    )
+
+    day_of_week = models.CharField(
+        max_length=10,
+        choices=DayOfWeek.choices
+    )
+
+    available_from = models.TimeField()
+
+    available_to = models.TimeField()
+
+    slot_duration = models.PositiveIntegerField(
+        default=15,
+        help_text="Appointment slot duration in minutes."
+    )
+
+    class Meta:
+        ordering = ["doctor", "day_of_week", "available_from"]
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "doctor",
+                    "day_of_week",
+                    "available_from",
+                    "available_to",
+                ],
+                name="unique_doctor_availability"
+            )
+        ]
+
+    def clean(self):
+        errors = {}
+
+        if self.doctor.user.role != "DOCTOR":
+            errors["doctor"] = (
+                "Availability can only be assigned to doctors."
+            )
+
+        if self.doctor.status != StaffProfile.Status.ACTIVE:
+            errors["doctor"] = (
+                "Availability can only be assigned to active doctors."
+            )
+
+        if self.available_from >= self.available_to:
+            errors["available_to"] = (
+                "Available-to time must be later than available-from time."
+            )
+
+        if self.slot_duration <= 0:
+            errors["slot_duration"] = (
+                "Slot duration must be greater than 0 minutes."
+            )
+
+        if errors:
+            raise ValidationError(errors)
+
+    def __str__(self):
+        return (
+            f"Dr. {self.doctor.first_name} "
+            f"{self.doctor.last_name} - "
+            f"{self.day_of_week} "
+            f"({self.available_from} - {self.available_to})"
+        )

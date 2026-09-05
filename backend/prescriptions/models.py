@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from patients.models import Patient
 from pharmacy.models import Medicine
 from laboratory.models import LabTest
+from consultations.models import Consultation
 
 User = get_user_model()
 
@@ -12,6 +13,14 @@ class Prescription(models.Model):
         max_length=30,
         unique=True,
         editable=False
+    )
+
+    consultation = models.OneToOneField(
+        Consultation,
+        on_delete=models.PROTECT,
+        related_name="prescription",
+        null=True,
+        blank=True,
     )
 
     patient = models.ForeignKey(
@@ -30,7 +39,7 @@ class Prescription(models.Model):
 
     doctor_name = models.CharField(
         max_length=100,
-        default="Dr. Robert Smith"
+        
     )
 
     diagnosis = models.CharField(max_length=255)

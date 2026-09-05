@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Department, StaffProfile
+from .models import Department, StaffProfile, DoctorAvailability
 
 
 @admin.register(Department)
@@ -55,4 +55,25 @@ class StaffProfileAdmin(admin.ModelAdmin):
         obj.user.save(update_fields=["is_active"])
 
         super().save_model(request, obj, form, change)
-        
+
+@admin.register(DoctorAvailability)
+class DoctorAvailabilityAdmin(admin.ModelAdmin):
+
+    list_display = (
+        "doctor",
+        "day_of_week",
+        "available_from",
+        "available_to",
+        "slot_duration",
+    )
+
+    list_filter = (
+        "day_of_week",
+        "slot_duration",
+    )
+
+    search_fields = (
+        "doctor__staff_id",
+        "doctor__first_name",
+        "doctor__last_name",
+    )     

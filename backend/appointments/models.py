@@ -9,6 +9,7 @@ class Appointment(models.Model):
 
     class Status(models.TextChoices):
         BOOKED = "BOOKED", "Booked"
+        TOKEN_PENDING = "TOKEN_PENDING", "Token Pending"
         CHECKED_IN = "CHECKED_IN", "Checked In"
         IN_CONSULTATION = "IN_CONSULTATION", "In Consultation"
         COMPLETED = "COMPLETED", "Completed"

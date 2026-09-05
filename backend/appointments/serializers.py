@@ -1,8 +1,9 @@
-from datetime import date
+from datetime import date, timedelta
+from django.utils import timezone
 
 from rest_framework import serializers
 
-from staff.models import StaffProfile
+from staff.models import StaffProfile,DoctorAvailability
 
 from .models import Appointment
 
@@ -100,81 +101,147 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, attrs):
+        appointment_date = attrs.get("appointment_date")
+        appointment_time = attrs.get("appointment_time")
+        doctor = attrs.get("doctor")
+        patient = attrs.get("patient")
 
-        patient = attrs.get(
-            "patient",
-            getattr(self.instance, "patient", None),
-        )
+        # -----------------------------
+        # Patient booking date rules
+        # -----------------------------
 
-        doctor = attrs.get(
-            "doctor",
-            getattr(self.instance, "doctor", None),
-        )
-
-        appointment_date = attrs.get(
-            "appointment_date",
-            getattr(self.instance, "appointment_date", None),
-        )
-
-        appointment_time = attrs.get(
-            "appointment_time",
-            getattr(self.instance, "appointment_time", None),
-        )
-
-        if not patient or not doctor or not appointment_date or not appointment_time:
-            return attrs
+        if appointment_date < date.today():
+            raise serializers.ValidationError({
+                "appointment_date":
+                    "Past dates are not allowed."
+            })
 
         today = date.today()
 
-        # -----------------------------------
-        # Past dates are not allowed
-        # -----------------------------------
+        patient_registered_date = patient.registered_at.date()
 
-        if appointment_date < today:
-            raise serializers.ValidationError({
-                "appointment_date":
-                    "Past appointment dates are not allowed."
-            })
+        # -----------------------------------------
+        # New / Offline patient → Today only
+        # -----------------------------------------
 
-        # -----------------------------------
-        # New vs Existing Patient
-        # -----------------------------------
+        if patient_registered_date == today:
 
-        if appointment_date > today:
-
-            if not patient.appointments.exists():
+            if appointment_date != today:
                 raise serializers.ValidationError({
                     "appointment_date":
-                        "A newly registered patient can book "
-                        "only today's appointment. Future appointments "
-                        "are allowed only for existing patients."
+                        "Newly registered patients can book only today's appointment."
                 })
 
-        # -----------------------------------
-        # Doctor slot uniqueness
-        # -----------------------------------
+        # -----------------------------------------
+        # Existing patient → Today + next 2 days
+        # -----------------------------------------
 
-        existing = Appointment.objects.filter(
-            doctor=doctor,
-            appointment_date=appointment_date,
-            appointment_time=appointment_time,
-            status__in=[
-                Appointment.Status.BOOKED,
-                Appointment.Status.CHECKED_IN,
-                Appointment.Status.IN_CONSULTATION,
-            ],
-        )
+        elif patient_registered_date < today:
 
-        if self.instance:
-            existing = existing.exclude(
-                pk=self.instance.pk
-            )
+            if appointment_date > today + timedelta(days=2):
+                raise serializers.ValidationError({
+                    "appointment_date":
+                        "Existing patients can book appointments only within the next 2 days."
+                })
 
-        if existing.exists():
+        # -----------------------------
+        # Doctor validation
+        # -----------------------------
+
+        if doctor.user.role != "DOCTOR":
             raise serializers.ValidationError({
-                "appointment_time":
-                    "This doctor already has an appointment "
-                    "at the selected time."
+                "doctor": "Selected staff member is not a doctor."
             })
 
+        if doctor.status != "ACTIVE":
+            raise serializers.ValidationError({
+                "doctor": "Selected doctor is inactive."
+            })
+
+        # -----------------------------
+        # Doctor availability
+        # -----------------------------
+
+        day_name = appointment_date.strftime("%A").upper()
+
+        availability = DoctorAvailability.objects.filter(
+            doctor=doctor,
+            day_of_week=day_name,
+            available_from__lte=appointment_time,
+            available_to__gt=appointment_time,
+        ).first()
+
+        if not availability:
+            raise serializers.ValidationError({
+                "appointment_time":
+                    "Selected doctor is not available at this time."
+            })
+
+        # -----------------------------
+        # Today's past-time check
+        # -----------------------------
+
+        if appointment_date == today:
+            current_time = timezone.localtime().time()
+
+            if appointment_time <= current_time:
+                raise serializers.ValidationError({
+                    "appointment_time":
+                        "Past time slots cannot be booked."
+                })
+
+        # -----------------------------
+        # 15-minute slot validation
+        # -----------------------------
+
+        minutes_from_start = (
+            appointment_time.hour * 60
+            + appointment_time.minute
+        ) - (
+            availability.available_from.hour * 60
+            + availability.available_from.minute
+        )
+
+        if minutes_from_start % availability.slot_duration != 0:
+            raise serializers.ValidationError({
+                "appointment_time":
+                    f"Appointment time must follow the "
+                    f"{availability.slot_duration}-minute slot interval."
+            })
+
+       # -----------------------------
+        # Duplicate active appointment
+        # -----------------------------
+        if self.instance is None:
+            if Appointment.objects.filter(
+                doctor=doctor,
+                appointment_date=appointment_date,
+                appointment_time=appointment_time,
+                status__in=[
+                    Appointment.Status.BOOKED,
+                    Appointment.Status.TOKEN_PENDING,
+                    Appointment.Status.CHECKED_IN,
+                    Appointment.Status.IN_CONSULTATION,
+                ],
+            ).exists():
+                raise serializers.ValidationError({
+                    "appointment_time":
+                        "This appointment slot is already booked."
+                })
+
         return attrs
+
+    def create(self, validated_data):
+        appointment_date = validated_data["appointment_date"]
+        patient = validated_data["patient"]
+
+        today = date.today()
+
+        # Future appointment for an existing patient
+        if (
+            appointment_date > today
+            and patient.registered_at.date() < today
+        ):
+            validated_data["status"] = Appointment.Status.TOKEN_PENDING
+
+        return Appointment.objects.create(**validated_data)

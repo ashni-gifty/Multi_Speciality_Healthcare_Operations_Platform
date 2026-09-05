@@ -6,11 +6,17 @@ from rest_framework.views import APIView
 from accounts.models import CustomUser
 from accounts.permissions import IsAdminRole
 from patients.models import Patient
-from .models import Department, StaffProfile
+from .models import (
+    Department,
+    StaffProfile,
+    DoctorAvailability,
+)
+
 from .serializers import (
     DepartmentSerializer,
     StaffCreateSerializer,
     StaffProfileSerializer,
+    DoctorAvailabilitySerializer,
 )
 
 
@@ -305,4 +311,54 @@ class AdminDashboardView(APIView):
             "notifications_count": 3,
         })
 
-    
+class DoctorAvailabilityListCreateView(APIView):
+
+    permission_classes = [
+        IsAuthenticated,
+        IsAdminRole,
+    ]
+
+    def get(self, request):
+
+        doctor_id = request.query_params.get("doctor")
+
+        availability = (
+            DoctorAvailability.objects
+            .select_related("doctor", "doctor__user")
+            .filter(
+                doctor__user__role=CustomUser.Role.DOCTOR
+            )
+        )
+
+        if doctor_id:
+            availability = availability.filter(
+                doctor_id=doctor_id
+            )
+
+        availability = availability.order_by(
+            "doctor",
+            "day_of_week",
+            "available_from"
+        )
+
+        serializer = DoctorAvailabilitySerializer(
+            availability,
+            many=True
+        )
+
+        return Response(serializer.data)
+
+    def post(self, request):
+
+        serializer = DoctorAvailabilitySerializer(
+            data=request.data
+        )
+
+        serializer.is_valid(raise_exception=True)
+
+        availability = serializer.save()
+
+        return Response(
+            DoctorAvailabilitySerializer(availability).data,
+            status=status.HTTP_201_CREATED
+        )

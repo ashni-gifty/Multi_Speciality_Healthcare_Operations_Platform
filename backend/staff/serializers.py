@@ -3,8 +3,7 @@ from django.db import transaction
 from rest_framework import serializers
 
 from accounts.models import CustomUser
-from .models import Department, StaffProfile
-
+from .models import (Department,StaffProfile,DoctorAvailability,)
 
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -50,6 +49,61 @@ class StaffProfileSerializer(serializers.ModelSerializer):
             "status",
         ]
 
+class DoctorAvailabilitySerializer(serializers.ModelSerializer):
+
+    doctor_name = serializers.SerializerMethodField()
+    doctor_staff_id = serializers.CharField(
+        source="doctor.staff_id",
+        read_only=True
+    )
+
+    class Meta:
+        model = DoctorAvailability
+
+        fields = [
+            "id",
+            "doctor",
+            "doctor_staff_id",
+            "doctor_name",
+            "day_of_week",
+            "available_from",
+            "available_to",
+            "slot_duration",
+        ]
+
+    def get_doctor_name(self, obj):
+        return (
+            f"Dr. {obj.doctor.first_name} "
+            f"{obj.doctor.last_name}"
+        )
+
+    def validate_doctor(self, value):
+
+        if value.user.role != CustomUser.Role.DOCTOR:
+            raise serializers.ValidationError(
+                "Availability can only be assigned to doctors."
+            )
+
+        if value.status != StaffProfile.Status.ACTIVE:
+            raise serializers.ValidationError(
+                "Selected doctor is inactive."
+            )
+
+        return value
+
+    def validate(self, attrs):
+
+        available_from = attrs.get("available_from")
+        available_to = attrs.get("available_to")
+
+        if available_from and available_to:
+            if available_from >= available_to:
+                raise serializers.ValidationError({
+                    "available_to":
+                    "Available-to time must be later than available-from time."
+                })
+
+        return attrs
 
 class StaffCreateSerializer(serializers.Serializer):
 

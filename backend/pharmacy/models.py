@@ -2,6 +2,7 @@ from datetime import date
 from django.db import models
 from patients.models import Patient
 
+
 class Medicine(models.Model):
 
     class Category(models.TextChoices):
@@ -14,32 +15,12 @@ class Medicine(models.Model):
         INHALER = "INHALER", "Inhaler"
         OTHER = "OTHER", "Other"
 
-    class Status(models.TextChoices):
-        ACTIVE = "ACTIVE", "Active"
-        DISCONTINUED = "DISCONTINUED", "Discontinued"
-
-    medicine_id = models.CharField(
-        max_length=20,
-        unique=True,
-        blank=True
-    )
+    medicine_id = models.CharField(max_length=20, unique=True, blank=True)
 
     name = models.CharField(max_length=150)
-
-    generic_name = models.CharField(
-        max_length=150,
-        blank=True
-    )
-
-    manufacturer = models.CharField(
-        max_length=150,
-        blank=True
-    )
-
-    supplier = models.CharField(
-        max_length=150,
-        blank=True
-    )
+    generic_name = models.CharField(max_length=150, blank=True)
+    manufacturer = models.CharField(max_length=150, blank=True)
+    supplier = models.CharField(max_length=150, blank=True)
 
     category = models.CharField(
         max_length=20,
@@ -81,12 +62,9 @@ class MedicineStock(models.Model):
         related_name="stocks"
     )
 
-    batch_number = models.CharField(
-        max_length=50
-    )
+    batch_number = models.CharField(max_length=50)
 
     manufacturing_date = models.DateField()
-
     expiry_date = models.DateField()
 
     price_per_unit = models.DecimalField(
@@ -94,21 +72,12 @@ class MedicineStock(models.Model):
         decimal_places=2
     )
 
-    units = models.PositiveIntegerField(
-        default=0
-    )
+    units = models.PositiveIntegerField(default=0)
 
-    reorder_level = models.PositiveIntegerField(
-        default=20
-    )
+    reorder_level = models.PositiveIntegerField(default=20)
 
-    created_at = models.DateTimeField(
-        auto_now_add=True
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True
-    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     @property
     def stock_status(self):
@@ -127,29 +96,69 @@ class MedicineStock(models.Model):
 
     def __str__(self):
         return f"{self.medicine.name} - {self.batch_number}"
-    
+
 
 class PharmacyBill(models.Model):
+
     class PaymentMethod(models.TextChoices):
         CASH = "CASH", "Cash"
         GPAY = "GPAY", "GPay"
 
-    bill_number = models.CharField(max_length=30, unique=True)
+    bill_number = models.CharField(
+        max_length=30,
+        unique=True,
+        blank=True
+    )
+
+    # Prescription ID is stored without creating a circular model import.
+    prescription_id = models.PositiveBigIntegerField(
+        unique=True,
+        null=True,
+        blank=True
+    )
+
     patient = models.ForeignKey(
         Patient,
         on_delete=models.PROTECT,
-        related_name="pharmacy_bills",
+        related_name="pharmacy_bills"
     )
-    subtotal = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    gst = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    subtotal = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    gst = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
+    total_amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0
+    )
+
     payment_method = models.CharField(
         max_length=10,
         choices=PaymentMethod.choices,
-        default=PaymentMethod.CASH,
+        default=PaymentMethod.CASH
     )
+
     paid = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+
+        if not self.bill_number:
+            last_bill = PharmacyBill.objects.order_by("-id").first()
+            next_id = (last_bill.id + 1) if last_bill else 1
+            self.bill_number = f"PHARM{next_id:05d}"
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.bill_number
@@ -168,6 +177,14 @@ class PharmacyBillItem(models.Model):
         on_delete=models.PROTECT
     )
 
+    stock = models.ForeignKey(
+        MedicineStock,
+        on_delete=models.PROTECT,
+        related_name="bill_items",
+        null=True,
+        blank=True
+    )
+
     quantity = models.PositiveIntegerField()
 
     price_per_unit = models.DecimalField(
@@ -182,3 +199,4 @@ class PharmacyBillItem(models.Model):
 
     def __str__(self):
         return f"{self.bill.bill_number} - {self.medicine.name}"
+    
